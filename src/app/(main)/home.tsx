@@ -5,6 +5,7 @@ import { KarlaLogo } from '../../components/KarlaLogo';
 import { MainScreen } from '../../components/MainScreen';
 import { AppIcon } from '../../components/AppIcon';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { LearnerAvatar } from '../../features/learners/LearnerAvatar';
 import { useLearners } from '../../features/learners/LearnersProvider';
 import { formatBirthDate, getAge } from '../../features/learners/model';
 import { colors, fonts } from '../../theme';
@@ -39,7 +40,7 @@ export default function HomeScreen() {
           {learners.map((learner) => (
             <View key={learner.id} style={styles.card}>
               <View style={styles.cardTop}>
-                <View style={styles.avatar}><AppIcon name="user" size={27} color={colors.accentInk} /></View>
+                <LearnerAvatar learnerId={learner.id} />
                 <View style={styles.identity}><Text style={styles.learnerName}>{learner.name}</Text><Text style={styles.age}>{getAge(learner.date_of_birth)} years old</Text></View>
                 <View style={styles.learnerBadge}><Text style={styles.learnerBadgeText}>L</Text></View>
               </View>
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
   count: { fontFamily: fonts.medium, fontSize: 13, color: colors.accentInk, backgroundColor: colors.accentSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14 },
   card: { gap: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 20, borderRadius: 24 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   identity: { flex: 1, gap: 3 },
   learnerName: { fontFamily: fonts.medium, fontSize: 22, color: colors.ink },
   age: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted },

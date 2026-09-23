@@ -16,6 +16,19 @@ export const colors = {
   errorSoft: '#FFF0F0',
 } as const;
 
+// Hue variants of accent: OKLCH lightness ~0.820 and chroma ~0.098.
+// All keep at least 8.5:1 contrast against the koala's #282322 outline.
+export const learnerAvatarColors = [
+  { id: 'sky', label: 'Sky', background: colors.accent },
+  { id: 'mint', label: 'Mint', background: '#89D8AE' },
+  { id: 'lavender', label: 'Lavender', background: '#CEB6FB' },
+  { id: 'rose', label: 'Rose', background: '#F8AAC7' },
+  { id: 'peach', label: 'Peach', background: '#F4B582' },
+  { id: 'butter', label: 'Butter', background: '#D8C478' },
+] as const;
+
+export type LearnerAvatarColorId = (typeof learnerAvatarColors)[number]['id'];
+
 export const fonts = {
   regular: 'Fredoka_400Regular',
   medium: 'Fredoka_500Medium',
