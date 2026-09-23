@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '../../components/AppIcon';
 import { colors, fonts } from '../../theme';
@@ -12,6 +12,8 @@ export function LearnerSwitcher() {
   const { learners, selectedLearner, selectLearner, loading, offline, error, refresh } = useLearners();
   const [open, setOpen] = useState(false);
   const { height } = useWindowDimensions();
+  // Reuse the screen's insets so the modal header aligns on its first native mount.
+  const insets = useSafeAreaInsets();
   const initiallyLoading = loading && !selectedLearner;
   const name = selectedLearner?.name ?? (initiallyLoading ? 'Loading learners…' : error ? 'Choose a learner' : 'Add a learner');
 
@@ -45,7 +47,7 @@ export function LearnerSwitcher() {
       {open && <Modal transparent animationType="fade" onRequestClose={() => setOpen(false)} statusBarTranslucent navigationBarTranslucent>
         <View style={styles.overlay}>
           <Pressable accessibilityRole="button" accessibilityLabel="Close learner selection" style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
-          <SafeAreaView edges={['top', 'left', 'right']} pointerEvents="box-none" style={styles.safeArea}>
+          <View pointerEvents="box-none" style={[styles.safeArea, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
             <View style={styles.dropdownPosition} accessibilityViewIsModal onAccessibilityEscape={() => setOpen(false)}>
               {trigger(true)}
               <View style={styles.dropdown}>
@@ -90,7 +92,7 @@ export function LearnerSwitcher() {
                 </View>
               </View>
             </View>
-          </SafeAreaView>
+          </View>
         </View>
       </Modal>}
     </>
