@@ -12,6 +12,8 @@ export const colors = {
   accentPressed: '#72C3F6',
   accentEdge: '#59ACE0',
   accentInk: '#256087',
+  error: '#A12D32',
+  errorSoft: '#FFF0F0',
 } as const;
 
 export const fonts = {

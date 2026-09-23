@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { colors } from '../theme';
+import { LearnersProvider } from '../features/learners/LearnersProvider';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -29,7 +30,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <LearnersProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -40,7 +41,8 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: 'Karla Drive' }} />
         <Stack.Screen name="tutorial" options={{ title: 'What is Karla Drive?' }} />
         <Stack.Screen name="(main)" options={{ title: 'Karla Drive' }} />
+        <Stack.Screen name="learners/new" options={{ title: 'Add learner', gestureEnabled: false }} />
       </Stack>
-    </>
+    </LearnersProvider>
   );
 }
