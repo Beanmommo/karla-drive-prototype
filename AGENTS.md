@@ -29,6 +29,11 @@ Run lint and typecheck before declaring any task done.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
+## Icons
+
+- Use **Lucide** (`lucide-react-native`) for all UI icons through `src/components/AppIcon.tsx`, which defines shared color, size, and stroke defaults.
+- Add icons using direct imports such as `lucide-react-native/icons/house` to keep native and web bundles small.
+
 ## Building with EAS
 
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.

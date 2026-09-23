@@ -12,7 +12,11 @@ import { colors } from '../theme';
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({ Fredoka_400Regular, Fredoka_500Medium, Fredoka_600SemiBold });
+  const [loaded, error] = useFonts({
+    Fredoka_400Regular,
+    Fredoka_500Medium,
+    Fredoka_600SemiBold,
+  });
 
   useEffect(() => {
     if (loaded || error) {
@@ -35,7 +39,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ title: 'Karla Drive' }} />
         <Stack.Screen name="tutorial" options={{ title: 'What is Karla Drive?' }} />
-        <Stack.Screen name="home" options={{ title: 'Home — Karla Drive' }} />
+        <Stack.Screen name="(main)" options={{ title: 'Karla Drive' }} />
       </Stack>
     </>
   );
