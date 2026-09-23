@@ -12,6 +12,8 @@ import X from 'lucide-react-native/icons/x';
 import Check from 'lucide-react-native/icons/check';
 import Clock from 'lucide-react-native/icons/clock';
 import Moon from 'lucide-react-native/icons/moon';
+import BookOpen from 'lucide-react-native/icons/book-open';
+import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import type { ColorValue } from 'react-native';
 
 import { colors } from '../theme';
@@ -21,6 +23,7 @@ const icons = {
   home: House, car: CarFront, play: Play, user: UserRound, back: ArrowLeft,
   chevronDown: ChevronDown, calendar: CalendarDays, location: MapPin,
   plus: Plus, shield: ShieldCheck, close: X, check: Check, clock: Clock, moon: Moon,
+  modules: BookOpen, chevronRight: ChevronRight,
 };
 
 type AppIconProps = {

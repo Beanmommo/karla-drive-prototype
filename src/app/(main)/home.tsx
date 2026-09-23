@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LearnerSwitcher } from '../../features/learners/LearnerSwitcher';
 import { LearnerPracticeStats } from '../../features/learners/LearnerPracticeStats';
 import { useLearners } from '../../features/learners/LearnersProvider';
+import { LearnerModulesSummary } from '../../features/modules/LearnerModulesSummary';
 import { colors } from '../../theme';
 
 export default function HomeScreen() {
@@ -15,10 +16,13 @@ export default function HomeScreen() {
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         {selectedLearner && (
-          <LearnerPracticeStats
-            key={`${selectedLearner.account_id}:${selectedLearner.id}`}
-            learner={selectedLearner}
-          />
+          <>
+            <LearnerPracticeStats
+              key={`${selectedLearner.account_id}:${selectedLearner.id}`}
+              learner={selectedLearner}
+            />
+            <LearnerModulesSummary learner={selectedLearner} />
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -28,5 +32,5 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   header: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 24 },
-  content: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 32, paddingBottom: 32 },
+  content: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 32, paddingBottom: 32, gap: 24 },
 });
