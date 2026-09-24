@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { colors } from '../theme';
 import { ModuleStatusesProvider } from '../features/modules/ModuleStatusesProvider';
 import { LearnersProvider } from '../features/learners/LearnersProvider';
+import { PracticeProvider } from '../features/practice/PracticeProvider';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +34,7 @@ export default function RootLayout() {
   return (
     <LearnersProvider>
       <ModuleStatusesProvider>
+        <PracticeProvider>
         <StatusBar style="dark" />
         <Stack
           screenOptions={{
@@ -44,7 +46,10 @@ export default function RootLayout() {
           <Stack.Screen name="tutorial" options={{ title: 'What is Karla Drive?' }} />
           <Stack.Screen name="(main)" options={{ title: 'Karla Drive' }} />
           <Stack.Screen name="learners/new" options={{ title: 'Add learner', gestureEnabled: false }} />
+          <Stack.Screen name="practice/setup" options={{ title: 'Start practice', gestureEnabled: false }} />
+          <Stack.Screen name="practice/active" options={{ title: 'Practice in progress', gestureEnabled: false }} />
         </Stack>
+        </PracticeProvider>
       </ModuleStatusesProvider>
     </LearnersProvider>
   );

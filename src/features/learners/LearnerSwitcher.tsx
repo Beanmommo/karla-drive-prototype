@@ -15,6 +15,7 @@ export function LearnerSwitcher() {
   // Reuse the screen's insets so the modal header aligns on its first native mount.
   const insets = useSafeAreaInsets();
   const initiallyLoading = loading && !selectedLearner;
+  const canAddDirectly = !initiallyLoading && !learners.length && !error;
   const name = selectedLearner?.name ?? (initiallyLoading ? 'Loading learners…' : error ? 'Choose a learner' : 'Add a learner');
 
   function trigger(expanded: boolean) {
@@ -22,12 +23,17 @@ export function LearnerSwitcher() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={selectedLearner ? `Learner: ${selectedLearner.name}` : name}
-        accessibilityHint="Choose a learner or add another learner"
-        aria-expanded={expanded}
+        accessibilityHint={canAddDirectly ? 'Create your first learner' : 'Choose a learner or add another learner'}
+        aria-expanded={canAddDirectly ? undefined : expanded}
         aria-busy={initiallyLoading}
         aria-disabled={initiallyLoading}
         disabled={initiallyLoading}
-        onPress={() => setOpen(!expanded)}
+        onPress={() => {
+          if (canAddDirectly) {
+            setOpen(false);
+            router.push('/learners/new');
+          } else setOpen(!expanded);
+        }}
         style={({ pressed }) => [styles.trigger, (pressed || expanded) && styles.triggerActive]}
       >
         {selectedLearner ? <LearnerAvatar learnerId={selectedLearner.id} size={56} /> : (
@@ -36,7 +42,7 @@ export function LearnerSwitcher() {
           </View>
         )}
         <Text numberOfLines={2} style={styles.name}>{name}</Text>
-        <View style={expanded && styles.chevronOpen}><AppIcon name="chevronDown" size={22} color={colors.muted} /></View>
+        {!canAddDirectly && <View style={expanded && styles.chevronOpen}><AppIcon name="chevronDown" size={22} color={colors.muted} /></View>}
       </Pressable>
     );
   }
@@ -51,7 +57,6 @@ export function LearnerSwitcher() {
             <View style={styles.dropdownPosition} accessibilityViewIsModal onAccessibilityEscape={() => setOpen(false)}>
               {trigger(true)}
               <View style={styles.dropdown}>
-                <Text accessibilityRole="header" style={styles.heading}>Your learners</Text>
                 {(offline || error) && (
                   <View style={styles.notice}>
                     <Text accessibilityRole="alert" style={styles.noticeText}>{learners.length ? 'Showing saved learners. Unable to refresh right now.' : error}</Text>
@@ -60,7 +65,7 @@ export function LearnerSwitcher() {
                     </Pressable>
                   </View>
                 )}
-                <FlatList
+                {learners.length > 0 && <FlatList
                   accessibilityRole="radiogroup"
                   accessibilityLabel="Learners"
                   data={learners}
@@ -81,9 +86,8 @@ export function LearnerSwitcher() {
                       </Pressable>
                     );
                   }}
-                  ListEmptyComponent={!error ? <Text style={styles.empty}>No learners yet.</Text> : null}
-                />
-                <View style={styles.footer}>
+                />}
+                <View style={[styles.footer, !learners.length && !offline && !error && styles.emptyFooter]}>
                   <Pressable accessibilityRole="button" onPress={() => { setOpen(false); router.push('/learners/new'); }}
                     style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
                     <View style={styles.addIcon}><AppIcon name="plus" size={23} color={colors.accentInk} /></View>
@@ -109,16 +113,15 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   dropdownPosition: { width: '100%', maxWidth: 480, maxHeight: '100%', alignSelf: 'center', paddingHorizontal: 16, paddingTop: 24, paddingBottom: 24, gap: 8 },
   dropdown: { flexShrink: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 24, overflow: 'hidden', boxShadow: '0 12px 32px rgba(24, 42, 54, 0.10)' },
-  heading: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10 },
-  list: { paddingHorizontal: 8, paddingBottom: 8 },
+  list: { padding: 8 },
   row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16 },
   selectedRow: { backgroundColor: colors.accentSoft },
   pressed: { backgroundColor: colors.neutralSoft },
   optionName: { flex: 1, fontFamily: fonts.medium, fontSize: 18, lineHeight: 24, color: colors.ink },
   footer: { borderTopWidth: 1, borderTopColor: colors.border, padding: 8 },
+  emptyFooter: { borderTopWidth: 0 },
   addIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   addLabel: { flex: 1, fontFamily: fonts.medium, fontSize: 18, lineHeight: 24, color: colors.accentInk },
-  empty: { paddingHorizontal: 12, paddingVertical: 16, fontFamily: fonts.regular, fontSize: 16, color: colors.muted },
   notice: { paddingHorizontal: 20, paddingTop: 4 },
   noticeText: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
   retry: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },

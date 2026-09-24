@@ -5,6 +5,7 @@ import { LearnerSwitcher } from '../../features/learners/LearnerSwitcher';
 import { LearnerPracticeStats } from '../../features/learners/LearnerPracticeStats';
 import { useLearners } from '../../features/learners/LearnersProvider';
 import { LearnerModulesSummary } from '../../features/modules/LearnerModulesSummary';
+import { PracticeSummary } from '../../features/practice/PracticeSummary';
 import { colors } from '../../theme';
 
 export default function HomeScreen() {
@@ -22,6 +23,7 @@ export default function HomeScreen() {
               learner={selectedLearner}
             />
             <LearnerModulesSummary learner={selectedLearner} />
+            <PracticeSummary learner={selectedLearner} />
           </>
         )}
       </ScrollView>

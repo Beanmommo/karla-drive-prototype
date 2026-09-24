@@ -35,7 +35,19 @@
       "expo-font",
       "expo-splash-screen",
       "expo-router",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Karla Drive uses your precise location to plan and record your practice drive.",
+          "locationAlwaysAndWhenInUsePermission": "Allow background location so Karla Drive can record your practice while Apple Maps is open or your phone is locked.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }

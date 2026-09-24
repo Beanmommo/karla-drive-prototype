@@ -7,8 +7,9 @@ import { AppIcon } from './AppIcon';
 import { FormSheet } from './FormSheet';
 import { PrimaryButton } from './PrimaryButton';
 
-export function SelectField({ label, placeholder, value, options, onChange }: {
+export function SelectField({ label, placeholder, value, options, onChange, disabled = false }: {
   label: string; placeholder: string; value: string;
+  disabled?: boolean;
   options: { label: string; value: string }[]; onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -17,6 +18,7 @@ export function SelectField({ label, placeholder, value, options, onChange }: {
     <Picker
       accessibilityLabel={label}
       selectedValue={selection}
+      enabled={!disabled}
       onValueChange={onSelect}
       mode="dropdown"
       dropdownIconColor={colors.accentInk}
@@ -34,6 +36,7 @@ export function SelectField({ label, placeholder, value, options, onChange }: {
       {Platform.OS === 'ios' ? (
         <>
           <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${options.find((option) => option.value === value)?.label ?? placeholder}`}
+            disabled={disabled} accessibilityState={{ disabled }}
             accessibilityHint={`Choose ${label.toLowerCase()}`} style={styles.field}
             onPress={() => { setPending(value); setOpen(true); }}>
             <Text style={[styles.value, !value && styles.placeholder]}>{options.find((option) => option.value === value)?.label ?? placeholder}</Text>

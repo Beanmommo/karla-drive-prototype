@@ -9,9 +9,10 @@ type PrimaryButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  variant?: 'primary' | 'secondary';
 };
 
-export function PrimaryButton({ label, onPress, accessibilityHint, disabled = false, loading = false, fullWidth = false }: PrimaryButtonProps) {
+export function PrimaryButton({ label, onPress, accessibilityHint, disabled = false, loading = false, fullWidth = false, variant = 'primary' }: PrimaryButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -19,7 +20,8 @@ export function PrimaryButton({ label, onPress, accessibilityHint, disabled = fa
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, fullWidth && styles.fullWidth, disabled && styles.disabled, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.button, variant === 'secondary' && styles.secondary, fullWidth && styles.fullWidth,
+        disabled && styles.disabled, pressed && styles.pressed, pressed && variant === 'secondary' && styles.secondaryPressed]}
     >
       {loading && <ActivityIndicator color={colors.accentInk} />}
       <Text style={styles.label}>{label}</Text>
@@ -44,6 +46,8 @@ const styles = StyleSheet.create({
     borderColor: colors.accentEdge,
   },
   fullWidth: { maxWidth: '100%' },
+  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  secondaryPressed: { backgroundColor: colors.neutralSoft },
   disabled: { opacity: 0.45 },
   pressed: {
     backgroundColor: colors.accentPressed,

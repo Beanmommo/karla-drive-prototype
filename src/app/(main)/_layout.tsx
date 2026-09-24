@@ -1,14 +1,19 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '../../components/Avatar';
 import { AppIcon } from '../../components/AppIcon';
 import { TabIcon } from '../../components/TabIcon';
 import { colors, fonts } from '../../theme';
+import { useLearners } from '../../features/learners/LearnersProvider';
+import { usePractice } from '../../features/practice/PracticeProvider';
 
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
+  const { learners, loading } = useLearners();
+  const { enter, entering } = usePractice();
+  const practiceDisabled = !learners.length || loading || entering;
 
   return (
     <Tabs
@@ -51,9 +56,15 @@ export default function MainLayout() {
       />
       <Tabs.Screen
         name="practice"
+        listeners={{ tabPress: event => { event.preventDefault(); if (!practiceDisabled) void enter(); } }}
         options={{
           title: 'Practice',
           tabBarAccessibilityLabel: 'Practice',
+          tabBarButton: props => <Pressable onPress={props.onPress} onLongPress={props.onLongPress}
+            accessibilityRole="button" accessibilityLabel={props.accessibilityLabel} testID={props.testID} disabled={practiceDisabled}
+            accessibilityState={{ ...props.accessibilityState, disabled: practiceDisabled }}
+            accessibilityHint={!learners.length ? 'Add a learner from Home to enable practice' : 'Check permissions and prepare a practice drive'}
+            style={[props.style, practiceDisabled && { opacity: 0.4 }]}>{props.children}</Pressable>,
           tabBarItemStyle: { paddingTop: 0 },
           tabBarIconStyle: { width: 56, height: 56 },
           tabBarLabel: ({ focused }) => (

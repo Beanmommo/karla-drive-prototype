@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { AppState, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -8,12 +7,11 @@ import { AppIcon } from '../../components/AppIcon';
 import { colors, fonts } from '../../theme';
 import { getAge, type Learner } from './model';
 import {
-  EMPTY_PRACTICE_STATS,
   formatPracticeHours,
   getPracticeHourTargets,
   PRACTICE_REQUIREMENTS_URL,
-  readPracticeStats,
 } from './practiceStats';
+import { usePracticeTotals } from '../practice/PracticeSummary';
 
 const ARC = 'M 10 90 A 80 80 0 0 1 170 90';
 const ARC_LENGTH = Math.PI * 80;
@@ -72,18 +70,10 @@ function HoursStat({ label, minutes, target, night = false }: {
 }
 
 export function LearnerPracticeStats({ learner }: { learner: Learner }) {
-  const [stats, setStats] = useState(EMPTY_PRACTICE_STATS);
+  const stats = usePracticeTotals(learner);
   const [today, setToday] = useState(() => new Date());
   const { width, fontScale } = useWindowDimensions();
   const targets = getPracticeHourTargets(getAge(learner.date_of_birth, today));
-
-  useEffect(() => {
-    let active = true;
-    void readPracticeStats(AsyncStorage, learner.account_id, learner.id).then((cached) => {
-      if (active) setStats(cached);
-    });
-    return () => { active = false; };
-  }, [learner.account_id, learner.id]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;

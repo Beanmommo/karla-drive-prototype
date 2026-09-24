@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import type { Learner } from '../learners/model';
 import { assessmentStatuses, getLearnerModules, getModuleSummary, type ModuleAssessment, type ModuleId, type ModuleStatus } from './model';
 import { cacheAssessments, listAssessments, readCachedAssessments, saveAssessment } from './repository';
+import { overlayPracticeReviews } from '../practice/sync';
 
 type State = { records: ModuleAssessment[]; loaded: boolean; loading: boolean; saving: boolean; error: string | null };
 const initial: State = { records: [], loaded: false, loading: false, saving: false, error: null };
@@ -41,7 +42,8 @@ export function ModuleStatusesProvider({ children }: { children: ReactNode }) {
         await cacheAssessments(learner, records).catch(() => {});
       }
     } catch (error) {
-      if (isCurrent()) update(key, { error: error instanceof Error ? error.message : 'Could not load module statuses.' });
+      const records = await overlayPracticeReviews(learner.account_id, learner.id, current.current[key]?.records ?? []).catch(() => current.current[key]?.records ?? []);
+      if (isCurrent()) update(key, { records, error: error instanceof Error ? error.message : 'Could not load module statuses.' });
     } finally {
       if (isCurrent()) update(key, { loading: false });
     }

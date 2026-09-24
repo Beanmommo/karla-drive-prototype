@@ -4,6 +4,8 @@ Home offers **Add learner** when the supervisor has no learners, and shows every
 
 ## Run
 
+For the full Mac setup, development-build installation, and repeatable iPhone 16 launch commands, see [Local development](local-development.md).
+
 Use Node 24 LTS (or an Expo SDK 57 supported Node version).
 
 ```sh

@@ -14,6 +14,10 @@ import Clock from 'lucide-react-native/icons/clock';
 import Moon from 'lucide-react-native/icons/moon';
 import BookOpen from 'lucide-react-native/icons/book-open';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
+import Square from 'lucide-react-native/icons/square';
+import ExternalLink from 'lucide-react-native/icons/external-link';
+import Trash from 'lucide-react-native/icons/trash';
+import Route from 'lucide-react-native/icons/route';
 import type { ColorValue } from 'react-native';
 
 import { colors } from '../theme';
@@ -24,6 +28,7 @@ const icons = {
   chevronDown: ChevronDown, calendar: CalendarDays, location: MapPin,
   plus: Plus, shield: ShieldCheck, close: X, check: Check, clock: Clock, moon: Moon,
   modules: BookOpen, chevronRight: ChevronRight,
+  stop: Square, externalLink: ExternalLink, trash: Trash, route: Route,
 };
 
 type AppIconProps = {
