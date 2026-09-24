@@ -143,8 +143,9 @@ export function eventCounts(events: PracticeEvent[]): Record<EventKind, number> 
 export const eventModules: Record<EventKind, ModuleId> = {
   start: 'car_control', stop: 'car_control', left_turn: 'turns', right_turn: 'turns', roundabout: 'roundabouts', merge: 'merging',
 };
-export function appleMapsUrl(route: PracticeRoute): string {
-  if (route.mode === 'destination') return 'https://maps.apple.com/';
+export function appleMapsUrl(route: PracticeRoute): string | null {
+  // Keep the stored destination mode compatible with existing recordings.
+  if (route.mode === 'destination') return null;
   const coordinate = (p: Coordinate) => String(p.latitude) + ',' + p.longitude;
   const params = new URLSearchParams({ source: coordinate(route.origin), destination: coordinate(route.origin), mode: 'driving' });
   for (const stop of route.stops) params.append('waypoint', coordinate(stop));

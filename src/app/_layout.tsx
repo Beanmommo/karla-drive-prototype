@@ -11,10 +11,20 @@ import { colors } from '../theme';
 import { ModuleStatusesProvider } from '../features/modules/ModuleStatusesProvider';
 import { LearnersProvider } from '../features/learners/LearnersProvider';
 import { PracticeProvider } from '../features/practice/PracticeProvider';
+import { TutorialProvider, useTutorial } from '../features/tutorial/TutorialProvider';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  return (
+    <TutorialProvider>
+      <RootNavigator />
+    </TutorialProvider>
+  );
+}
+
+function RootNavigator() {
+  const { completed, loading: tutorialLoading } = useTutorial();
   const [loaded, error] = useFonts({
     Fredoka_400Regular,
     Fredoka_500Medium,
@@ -22,12 +32,12 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded || error) {
+    if ((loaded || error) && !tutorialLoading) {
       void SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded, error, tutorialLoading]);
 
-  if (!loaded && !error) {
+  if ((!loaded && !error) || tutorialLoading) {
     return null;
   }
 
@@ -42,8 +52,10 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: colors.background },
           }}
         >
-          <Stack.Screen name="index" options={{ title: 'Karla Drive' }} />
-          <Stack.Screen name="tutorial" options={{ title: 'What is Karla Drive?' }} />
+          <Stack.Protected guard={!completed}>
+            <Stack.Screen name="index" options={{ title: 'Karla Drive' }} />
+            <Stack.Screen name="tutorial" options={{ title: 'What is Karla Drive?' }} />
+          </Stack.Protected>
           <Stack.Screen name="(main)" options={{ title: 'Karla Drive' }} />
           <Stack.Screen name="learners/new" options={{ title: 'Add learner', gestureEnabled: false }} />
           <Stack.Screen name="practice/setup" options={{ title: 'Start practice', gestureEnabled: false }} />

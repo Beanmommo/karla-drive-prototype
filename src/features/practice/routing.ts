@@ -41,7 +41,7 @@ export async function generateLoop(origin: Coordinate, minutes: number, token: s
   let radius = minutes * 500 / (Math.PI * 2);
   const rotation = Math.random() * 360;
   let best: PracticeRoute | null = null;
-  let errorMessage = 'No suitable driving loop was found. Try another duration or use Pick destination.';
+  let errorMessage = 'No suitable driving loop was found. Try another duration or use Start recording.';
   for (let attempt = 0; attempt < 6; attempt++) {
     if (signal?.aborted) throw new Error('Route generation cancelled.');
     const heading = rotation + (attempt % 3) * 100;

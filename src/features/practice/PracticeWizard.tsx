@@ -96,7 +96,7 @@ function PracticeWizard({ learner }: { learner: Learner }) {
     setPhase('generating');
     try {
       if (Platform.OS === 'ios' && parseFloat(String(Platform.Version)) < 18.4) {
-        throw new Error('Multi-stop Apple Maps routes require iOS 18.4 or later. Use Pick destination on this device.');
+        throw new Error('Multi-stop Apple Maps routes require iOS 18.4 or later. Use Start recording on this device.');
       }
       const fix = await freshLocation();
       if (controller.signal.aborted) return;
@@ -123,10 +123,13 @@ function PracticeWizard({ learner }: { learner: Learner }) {
         stops: [], geometry: [], estimatedSeconds: 0, distanceMeters: 0,
       };
       const session = await startPractice(learner, selected, checks);
-      // Remove setup from the back stack; returning from Maps shows the live session.
+      // Replace setup with the live session. Only generated routes hand off to Maps.
       router.replace('/practice/active');
-      try { await Linking.openURL(appleMapsUrl(session.route)); }
-      catch { Alert.alert('Practice is recording', 'Apple Maps could not open. Use Open Apple Maps to retry, or Stop to end this session.'); }
+      const mapsUrl = appleMapsUrl(session.route);
+      if (mapsUrl) {
+        try { await Linking.openURL(mapsUrl); }
+        catch { Alert.alert('Practice is recording', 'Apple Maps could not open. Open Apple Maps from your Home Screen, or Stop to end this session.'); }
+      }
     } catch (cause) {
       // A failed start may mean the origin moved; require a fresh loop before retrying.
       setRoute(null);
@@ -138,7 +141,7 @@ function PracticeWizard({ learner }: { learner: Learner }) {
   }
 
   const buttonLabel = phase === 'starting' ? 'Starting practice…'
-    : mode === 'generated' ? 'Start in Apple Maps' : 'Start recording and open Apple Maps';
+    : mode === 'generated' ? 'Start in Apple Maps' : 'Start recording';
 
   return <SafeAreaView style={styles.screen}>
     <View accessibilityRole="progressbar" accessibilityLabel="Practice setup progress"
@@ -170,7 +173,7 @@ function PracticeWizard({ learner }: { learner: Learner }) {
             accessibilityState={{ checked: mode === value, disabled: busy }} disabled={busy}
             onPress={() => { if (!operation.current && !starting.current && mode !== value) { setMode(value); setRoute(null); setError(null); } }}
             style={[styles.segmentOption, mode === value && styles.selectedSegment]}>
-            <Text style={[styles.segmentText, mode === value && styles.selectedText]}>{value === 'generated' ? 'Generate route' : 'Pick destination'}</Text>
+            <Text style={[styles.segmentText, mode === value && styles.selectedText]}>{value === 'generated' ? 'Generate route' : 'Start recording'}</Text>
           </Pressable>)}
         </View>
         {mode === 'generated' ? <>
@@ -188,9 +191,8 @@ function PracticeWizard({ learner }: { learner: Learner }) {
               </View>
             </View>
           </View>}
-        </> : <View style={styles.destination}>
-          <AppIcon name="location" size={40} color={colors.accentInk} />
-          <Text style={styles.subheading}>Choose your destination in Maps</Text>
+        </> : <View style={styles.recording}>
+          <Text style={styles.subheading}>Karla will start the practice session.</Text>
         </View>}
       </View>}
     </ScrollView>
@@ -201,7 +203,9 @@ function PracticeWizard({ learner }: { learner: Learner }) {
           if (!allChecked) return;
           setStep(2);
           scroll.current?.scrollTo({ y: 0, animated: false });
-        }} /> : <Pressable accessibilityRole="button" accessibilityLabel={buttonLabel}
+        }} /> : mode === 'destination' ? <PrimaryButton label={buttonLabel} fullWidth
+          disabled={startDisabled} loading={phase === 'starting'} onPress={() => void start()} />
+          : <Pressable accessibilityRole="button" accessibilityLabel={buttonLabel}
           accessibilityState={{ disabled: startDisabled, busy: phase === 'starting' }}
           disabled={startDisabled} onPress={() => void start()}
           style={({ pressed }) => [styles.mapsButton, startDisabled && styles.dim, pressed && styles.pressed]}>
@@ -240,7 +244,7 @@ const styles = StyleSheet.create({
   routeSummary: { flex: 1, gap: 4 },
   routeTitle: { fontFamily: fonts.medium, fontSize: 17, color: colors.accentInk },
   routeDetails: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted },
-  destination: { alignItems: 'center', paddingVertical: 20, gap: 16 },
+  recording: { alignItems: 'center', paddingVertical: 20 },
   subheading: { fontFamily: fonts.medium, fontSize: 20, textAlign: 'center', color: colors.ink },
   footer: { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.background },
   actions: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 28, paddingTop: 16, paddingBottom: 12, gap: 12 },

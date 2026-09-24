@@ -1,12 +1,14 @@
-import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { KarlaLogo } from '../components/KarlaLogo';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { useTutorial } from '../features/tutorial/TutorialProvider';
 import { colors, fonts } from '../theme';
 
 export default function TutorialScreen() {
+  const { complete, completing } = useTutorial();
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} bounces={false}>
@@ -15,7 +17,7 @@ export default function TutorialScreen() {
             What is Karla Drive?
           </Text>
           <Text style={styles.description}>
-            Karla is here to facilitate Victorian families teaching the young ones to drive.
+            Karla is here to facilitate Australian families teaching the young ones to drive.
           </Text>
         </View>
 
@@ -26,7 +28,8 @@ export default function TutorialScreen() {
         <PrimaryButton
           label="I see"
           accessibilityHint="Continue to the homepage"
-          onPress={() => router.replace('/home')}
+          loading={completing}
+          onPress={() => { void complete(); }}
         />
       </ScrollView>
     </SafeAreaView>

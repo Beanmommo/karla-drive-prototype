@@ -12,6 +12,7 @@ import { moduleStatusLabels } from './model';
 import { useLearnerModules } from './ModuleStatusesProvider';
 import { ModuleStatusEditor } from './ModuleStatusEditor';
 import { ModuleStatusBadge } from './ModuleStatusBadge';
+import { ModuleCoachingTips } from './ModuleCoachingTips';
 
 function useModuleLearner() {
   const { learnerId, moduleId } = useLocalSearchParams<{ learnerId?: string; moduleId?: string }>();
@@ -174,6 +175,10 @@ export function ModuleDetailScreen() {
                 <Text style={[styles.body, styles.focusText]}>{focus}</Text>
               </View>
             ))}
+          </View>
+          <View style={styles.detailCard}>
+            <Text accessibilityRole="header" style={styles.sectionTitle}>Supervisor coaching tips</Text>
+            <ModuleCoachingTips module={module} />
           </View>
         </ScrollView>
       )}

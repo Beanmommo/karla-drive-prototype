@@ -10,5 +10,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: config.name ?? 'Karla Drive',
     slug: config.slug ?? 'karla-drive-prototype',
     extra: { ...config.extra, mapboxAccessToken: token },
+    plugins: [
+      // Mods execute in reverse registration order; remove APNs last.
+      ...(process.env.KARLA_PERSONAL_TEAM === '1' ? ['./plugins/withPersonalTeam'] : []),
+      ...(config.plugins ?? []),
+    ],
   };
 };

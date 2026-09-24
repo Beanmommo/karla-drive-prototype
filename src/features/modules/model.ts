@@ -91,8 +91,12 @@ export const moduleCatalogue = [
 ] as const;
 
 export type ModuleId = (typeof moduleCatalogue)[number]['id'];
-export type LearningModule = (typeof moduleCatalogue)[number];
+export type LearningModule = (typeof moduleCatalogue)[number] & { coachingTip?: string };
 export type LearnerModule = LearningModule & { learnerId: string; status: ModuleStatus };
+
+export function getModuleCoachingTip(module: LearningModule) {
+  return module.coachingTip?.trim() || null;
+}
 
 // Assessments are independent of practice records and GPS evidence.
 export function getLearnerModules(

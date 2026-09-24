@@ -57,7 +57,7 @@ export function PracticeHistoryScreen() {
         onPress={() => router.push({ pathname: '/learners/[learnerId]/practice/[sessionId]', params: { learnerId: learner.id, sessionId: item.session.id } })}>
         <View style={styles.sessionTop}><View style={styles.icon}><AppIcon name="route" size={23} color={colors.accentInk} /></View>
           <View style={styles.flex}><Text style={styles.sessionDate}>{new Date(item.session.ended_at!).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
-            <Text style={styles.small}>{new Date(item.session.ended_at!).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} · {item.session.route.mode === 'generated' ? 'Generated loop' : 'Apple Maps destination'}</Text></View>
+            <Text style={styles.small}>{new Date(item.session.ended_at!).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} · {item.session.route.mode === 'generated' ? 'Generated loop' : 'Practice recording'}</Text></View>
           <AppIcon name="chevronRight" size={20} color={colors.muted} /></View>
         <View style={styles.statRow}><Text style={styles.body}>{formatDuration(elapsedSeconds(item.session))} elapsed</Text>
           <Text style={styles.body}>{(item.session.metrics.distanceMeters / 1000).toFixed(1)} km</Text></View>

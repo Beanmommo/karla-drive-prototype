@@ -104,7 +104,12 @@ if (Platform.OS !== 'web' && !TaskManager.isTaskDefined(LOCATION_TASK)) {
 }
 const options: Location.LocationTaskOptions = {
   accuracy: Location.Accuracy.BestForNavigation, activityType: Location.ActivityType.AutomotiveNavigation,
-  distanceInterval: 3, timeInterval: 5000, deferredUpdatesInterval: 5000,
+  // SDK 57's iOS task consumer defaults an omitted distanceInterval to
+  // kCLDistanceFilterNone. A movement filter starves stationary recordings;
+  // timeInterval is Android-only and cannot provide an iOS heartbeat.
+  ...(Platform.OS === 'android' ? { distanceInterval: 3, timeInterval: 5000 } : {}),
+  // Deliver the first background fix immediately, even if no second fix arrives.
+  deferredUpdatesInterval: 0,
   pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true,
   foregroundService: { notificationTitle: 'Karla Drive is recording', notificationBody: 'Your practice session is in progress.', killServiceOnDestroy: false },
 };
@@ -164,6 +169,17 @@ export async function recoverPractice(): Promise<PracticeSession | null> {
   if (!running) {
     return changeSession(active.session.id, session => ({ ...session, interrupted: true,
       tracking_error: 'Recording was interrupted. Resume tracking or stop to keep what was recorded.' }));
+  }
+  if (Platform.OS === 'ios') {
+    // Task options survive app upgrades. Update old recordings in place without
+    // restarting a correctly configured task on every foreground maintenance pass.
+    const registered = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions | null>(LOCATION_TASK);
+    if ((registered?.distanceInterval ?? 0) > 0 || (registered?.deferredUpdatesInterval ?? 0) > 0) {
+      const current = await getActiveSession();
+      if (!stopPromise && current?.session.id === active.session.id) {
+        await Location.startLocationUpdatesAsync(LOCATION_TASK, options);
+      }
+    }
   }
   return active.session;
 }

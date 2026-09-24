@@ -44,13 +44,13 @@ test('solar calculation distinguishes Melbourne midday from midnight', () => {
   assert.equal(isNight(origin, Date.parse('2026-09-24T02:00:00Z')), false);
   assert.equal(isNight(origin, Date.parse('2026-09-24T14:00:00Z')), true);
 });
-test('Apple Maps receives ordered stops and returns to origin; destination mode opens Maps', () => {
+test('Apple Maps receives generated loops; recording without a route has no Maps handoff', () => {
   const stops = [offsetPoint(origin, 1000, 0), offsetPoint(origin, 1000, 90)];
   const url = new URL(appleMapsUrl({ mode: 'generated', origin, stops }));
   assert.equal(url.searchParams.get('source'), url.searchParams.get('destination'));
   assert.deepEqual(url.searchParams.getAll('waypoint'), stops.map(p => p.latitude + ',' + p.longitude));
   assert.equal(url.searchParams.get('mode'), 'driving');
-  assert.equal(appleMapsUrl({ mode: 'destination' }), 'https://maps.apple.com/');
+  assert.equal(appleMapsUrl({ mode: 'destination' }), null);
 });
 test('only confidently matched, traversed maneuvers count; gaps and future maneuvers do not', () => {
   const samples = [point(0), point(5), point(10), point(15), point(20), point(25)];
