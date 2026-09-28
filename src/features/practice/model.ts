@@ -26,6 +26,7 @@ export type PracticeSession = {
   id: string; account_id: string; learner_id: string; learner_name: string;
   started_at: number; ended_at: number | null; status: 'active' | 'finished';
   route: PracticeRoute; checks: string[]; checks_version: string;
+  checks_source?: 'session' | 'learner_preference';
   metrics: Metrics; interrupted: boolean; tracking_error: string | null;
   matched_until: number; detection_error: string | null;
   review: Partial<Record<ModuleId, ReviewChoice>>;

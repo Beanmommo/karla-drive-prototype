@@ -26,8 +26,8 @@ function useModuleLearner() {
   return { learner, moduleId, stageId, loading, error, refresh };
 }
 
-function ModulePage({ title, stageId, onBack, backLabel, children }: {
-  title: string; stageId?: ModuleStageId; onBack: () => void; backLabel: string; children: ReactNode;
+function ModulePage({ title, titleIcon, stageId, onBack, backLabel, children }: {
+  title: string; titleIcon?: ReactNode; stageId?: ModuleStageId; onBack: () => void; backLabel: string; children: ReactNode;
 }) {
   return (
     <SafeAreaView style={styles.screen}>
@@ -40,6 +40,7 @@ function ModulePage({ title, stageId, onBack, backLabel, children }: {
         {stageId && <View aria-hidden style={[styles.headerStageIcon, { backgroundColor: stageAppearance[stageId].color }]}>
           <StageIcon stageId={stageId} size={32} />
         </View>}
+        {titleIcon}
         <Text accessibilityRole="header" style={styles.headerTitle}>{title}</Text>
       </View>
       {children}
@@ -157,6 +158,8 @@ export function ModuleDetailScreen() {
   const { learner, moduleId, loading, error, refresh } = useModuleLearner();
   const assessments = useLearnerModules(learner);
   const module = assessments.modules.find((item) => item.id === moduleId);
+  const stageModules = assessments.modules.filter((item) => item.stage === module?.stage);
+  const moduleIndex = stageModules.findIndex((item) => item.id === moduleId);
   function goBack() {
     if (router.canGoBack()) router.back();
     else if (learner && module) router.replace({ pathname: '/learners/[learnerId]/modules/stages/[stageId]', params: { learnerId: learner.id, stageId: String(module.stage) } });
@@ -165,23 +168,20 @@ export function ModuleDetailScreen() {
   }
 
   return (
-    <ModulePage title="Module details" onBack={goBack} backLabel="Back to modules">
+    <ModulePage title={module?.title ?? 'Module details'}
+      titleIcon={module && <View aria-hidden style={[styles.headerStageIcon, styles.headerModuleIcon]}>
+        <Text style={styles.moduleNumberText}>{String(moduleIndex + 1).padStart(2, '0')}</Text>
+      </View>}
+      onBack={goBack} backLabel="Back to modules">
       {!learner ? <UnavailableLearner loading={loading} error={error} refresh={refresh} /> : !module ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>Module unavailable</Text>
           <Text style={styles.body}>Return to the module list to choose a module.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.detailContent}>
+        <ScrollView key={module.id} contentContainerStyle={styles.detailContent}>
           <LearnerIdentity learner={learner} />
-          <View style={styles.detailIntro}>
-            <Text style={styles.totalLabel}>Stage {module.stage}</Text>
-            <View style={styles.detailHeading}>
-              <View style={styles.detailIcon}><AppIcon name="modules" size={30} color={colors.accentInk} /></View>
-              <Text accessibilityRole="header" style={styles.detailTitle}>{module.title}</Text>
-            </View>
-            <Text style={styles.body}>{module.description}</Text>
-          </View>
+          <Text style={styles.body}>{module.description}</Text>
           <AssessmentNotice assessments={assessments} />
           {assessments.loaded && <ModuleStatusEditor
             key={`${learner.account_id}:${learner.id}:${module.id}`}
@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
   stagesContent: { flexGrow: 1, justifyContent: 'center', width: '100%', paddingVertical: 24, gap: 16 },
   stageNotice: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 24 },
   starTotal: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.starSoft, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  totalLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted },
   totalCount: { fontFamily: fonts.semibold, fontSize: 18, lineHeight: 24, color: colors.ink },
   totalMax: { fontFamily: fonts.regular, fontSize: 16, color: colors.muted },
   screen: { flex: 1, backgroundColor: colors.background },
@@ -223,6 +222,7 @@ const styles = StyleSheet.create({
   pressed: { backgroundColor: colors.accentSoft },
   headerTitle: { flex: 1, fontFamily: fonts.medium, fontSize: 20, color: colors.ink },
   headerStageIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  headerModuleIcon: { backgroundColor: colors.accentSoft },
   listContent: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 24 },
   introduction: { gap: 16, paddingTop: 12, paddingBottom: 20 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -235,10 +235,6 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 8 },
   moduleTitle: { fontFamily: fonts.medium, fontSize: 17, lineHeight: 23, color: colors.ink },
   detailContent: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 32, gap: 24 },
-  detailIntro: { gap: 16 },
-  detailHeading: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  detailIcon: { width: 60, height: 60, borderRadius: 20, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
-  detailTitle: { flex: 1, fontFamily: fonts.medium, fontSize: 30, lineHeight: 38, color: colors.ink },
   body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 25, color: colors.muted },
   detailCard: { padding: 20, gap: 14, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   sectionTitle: { fontFamily: fonts.medium, fontSize: 20, color: colors.ink },

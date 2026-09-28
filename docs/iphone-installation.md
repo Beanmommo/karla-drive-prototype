@@ -11,6 +11,13 @@ its JavaScript and Mapbox configuration, uses device-only demo storage, and
 has background location enabled. Lint, typecheck, and code-signature checks
 passed. GPS recording on an actual drive still requires device testing.
 
+On 28 September 2026, the Release app was updated in place on the same iPhone
+and launched successfully. This update includes the stacked practice-session
+cards, with an Apple Maps trail preview above the start time, duration,
+distance, and badges. It retains the device-only storage configuration and
+uses the same bundle identifier and signing team. Lint, typecheck, all 56
+application tests, the Release build, and code-signature verification passed.
+
 ## Mac and iPhone setup
 
 - Use Xcode 26.4 or newer for Expo SDK 57, and Node 24 with npm.

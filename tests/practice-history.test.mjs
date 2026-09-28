@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filterPracticeHistory } from '../src/features/practice/history.ts';
+import { filterPracticeHistory, resolvePracticeHistoryFilter } from '../src/features/practice/history.ts';
+import { getPracticeBadges } from '../src/features/practice/badges.ts';
 import { addPoints, emptyMetrics, isNight } from '../src/features/practice/model.ts';
 
 const origin = { latitude: -37.8136, longitude: 144.9631 };
@@ -12,9 +13,27 @@ const row = (id, nightSeconds, overrides = {}) => ({
 test('night history includes pure night, mixed and sub-minute sessions, preserving order', () => {
   const sessions = [row('day', 0), row('mixed', 600), row('night', 3600), row('brief-night', 0.5),
     row('active', 600, { status: 'active' }), { ...row('discarded', 600), deleted: true }];
-  assert.deepEqual(filterPracticeHistory(sessions, 'night').map(row => row.session.id), ['mixed', 'night', 'brief-night']);
-  assert.deepEqual(filterPracticeHistory(sessions, 'all').map(row => row.session.id), ['day', 'mixed', 'night', 'brief-night']);
-  assert.deepEqual(filterPracticeHistory([row('day', 0)], 'night'), []);
+  assert.deepEqual(filterPracticeHistory(sessions, 'night_drive').map(row => row.session.id), ['mixed', 'night', 'brief-night']);
+  assert.deepEqual(filterPracticeHistory(sessions, null).map(row => row.session.id), ['day', 'mixed', 'night', 'brief-night']);
+  assert.deepEqual(filterPracticeHistory([row('day', 0)], 'night_drive'), []);
+});
+
+test('badges and badge filters agree for existing sessions without stored badge fields', () => {
+  const sessions = [row('day', 0), row('mixed', 600), row('night', 3600), row('brief-night', 0.5)];
+  assert.deepEqual(getPracticeBadges(sessions[0].session), []);
+  const badgedSessions = sessions.filter(({ session }) => getPracticeBadges(session).some(badge => badge.id === 'night_drive'));
+  assert.deepEqual(filterPracticeHistory(sessions, 'night_drive'), badgedSessions);
+  assert.equal(getPracticeBadges(sessions[1].session)[0].label, 'Night drive');
+});
+
+test('badge links select the filter, deselection clears it, and older Night hours links still work', () => {
+  assert.equal(resolvePracticeHistoryFilter('night_drive'), 'night_drive');
+  assert.equal(resolvePracticeHistoryFilter(undefined), null);
+  assert.equal(resolvePracticeHistoryFilter(''), null);
+  assert.equal(resolvePracticeHistoryFilter('unknown'), null);
+  assert.equal(resolvePracticeHistoryFilter(undefined, 'night'), 'night_drive');
+  assert.equal(resolvePracticeHistoryFilter(undefined, 'all'), null);
+  assert.equal(resolvePracticeHistoryFilter('', 'night'), null);
 });
 
 for (const [transition, start, startsAtNight] of [
@@ -32,7 +51,7 @@ for (const [transition, start, startsAtNight] of [
     assert.equal(movingSeconds + stoppedSeconds, 3600);
     assert.ok(nightSeconds > 0 && nightSeconds < 3600);
     const finished = { session: { ...recorded, status: 'finished', ended_at: points.at(-1).timestamp }, deleted: false };
-    assert.deepEqual(filterPracticeHistory([finished], 'night'), [finished]);
+    assert.deepEqual(filterPracticeHistory([finished], 'night_drive'), [finished]);
   });
 }
 

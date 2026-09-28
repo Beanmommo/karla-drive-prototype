@@ -113,7 +113,7 @@ const options: Location.LocationTaskOptions = {
   pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true,
   foregroundService: { notificationTitle: 'Karla Drive is recording', notificationBody: 'Your practice session is in progress.', killServiceOnDestroy: false },
 };
-export function startPractice(learner: Learner, route: PracticeRoute, checks: string[]): Promise<PracticeSession> {
+export function startPractice(learner: Learner, route: PracticeRoute, checks: string[], checksSource: PracticeSession['checks_source'] = 'session'): Promise<PracticeSession> {
   if (startPromise) return startPromise;
   startPromise = (async () => {
     if (await getDemoAccountId() !== learner.account_id) throw new Error('Your account changed. Return to Home and select a learner.');
@@ -125,7 +125,7 @@ export function startPractice(learner: Learner, route: PracticeRoute, checks: st
     const session: PracticeSession = {
       id: randomUUID(), account_id: learner.account_id, learner_id: learner.id, learner_name: learner.name,
       started_at: Date.now(), ended_at: null, status: 'active', route: route.mode === 'destination' ? { ...route, origin: fix } : route,
-      checks, checks_version: 'practice-v1', metrics: emptyMetrics(), interrupted: false, tracking_error: null,
+      checks, checks_version: 'practice-v1', checks_source: checksSource, metrics: emptyMetrics(), interrupted: false, tracking_error: null,
       matched_until: 0, detection_error: null, review: {}, reviewed_at: null, review_conflicts: [],
     };
     await createSession(session);

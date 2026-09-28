@@ -17,31 +17,28 @@ export function ModuleRatingInput({ status, onChange, disabled = false, label = 
   status: ModuleStatus; onChange: (status: ModuleStatus) => void; disabled?: boolean; label?: string;
 }) {
   const rating = getModuleRating(status);
-  return <View style={styles.input}>
-    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.options}>
-      {ratingStatuses.map((value, index) => <Pressable key={value} accessibilityRole="radio"
-        accessibilityLabel={`${moduleStatusLabels[value]}, ${ratingDescriptions[getModuleRating(value)]}`}
-        aria-checked={value === status} aria-disabled={disabled} disabled={disabled}
-        onPress={() => onChange(value)} style={({ pressed }) => [styles.option,
-          value === status && styles.selected, pressed && styles.pressed, disabled && styles.disabled]}>
-        {index === 0 ? <Text style={styles.zero}>0</Text> : <AppIcon name="star" size={32}
-          color={index <= rating ? colors.star : colors.muted} fill={index <= rating ? colors.starFill : 'none'} />}
-      </Pressable>)}
-    </View>
-    <Text aria-live="polite" style={styles.description}>{moduleStatusLabels[status]} · {ratingDescriptions[rating]}</Text>
+  return <View accessibilityLabel={label} style={styles.options}>
+    {ratingStatuses.slice(1).map(value => {
+      const star = getModuleRating(value);
+      const selected = value === status;
+      return <Pressable key={value} accessibilityRole="button"
+        accessibilityLabel={`${label}: ${moduleStatusLabels[value]}, ${ratingDescriptions[star]}`}
+        accessibilityHint={selected ? 'Clear the rating to zero stars' : `Set the rating to ${moduleStatusLabels[value]}`}
+        accessibilityState={{ selected, disabled }} disabled={disabled}
+        onPress={() => onChange(selected ? 'not_performed' : value)}
+        style={({ pressed }) => [styles.option, pressed && styles.pressed, disabled && styles.disabled]}>
+        <AppIcon name="star" size={48}
+          color={star <= rating ? colors.star : colors.muted} fill={star <= rating ? colors.starFill : 'none'} />
+      </Pressable>;
+    })}
   </View>;
 }
 
 const styles = StyleSheet.create({
   stars: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   count: { marginLeft: 4, color: colors.muted, fontFamily: fonts.medium, fontSize: 14 },
-  input: { gap: 12 },
-  options: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  option: { minWidth: 48, minHeight: 52, flexGrow: 1, alignItems: 'center', justifyContent: 'center',
-    borderRadius: 14, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface },
-  selected: { borderColor: colors.star, backgroundColor: colors.starSoft },
+  options: { flexDirection: 'row', gap: 8 },
+  option: { minWidth: 64, minHeight: 72, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
   pressed: { backgroundColor: colors.starSoft },
   disabled: { opacity: 0.6 },
-  zero: { fontFamily: fonts.medium, fontSize: 22, color: colors.muted },
-  description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.muted },
 });

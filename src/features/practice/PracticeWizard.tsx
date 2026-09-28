@@ -1,3 +1,4 @@
+import { Checkbox } from 'expo-checkbox';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, BackHandler, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -14,6 +15,7 @@ import { mapboxToken } from './config';
 import { LearnerIdentity } from './LearnerIdentity';
 import { appleMapsUrl, durationOptions, type PracticeRoute } from './model';
 import { hasPracticeAccess } from './permissions';
+import { readSkipPracticeChecks, saveSkipPracticeChecks } from './preferences';
 import { usePractice } from './PracticeProvider';
 import { practiceRequirements } from './requirements';
 import { RoutePreview } from './RoutePreview';
@@ -24,7 +26,7 @@ import { getActiveSession } from './store';
 export function PracticeWizardScreen() {
   const { selectedLearner, loading } = useLearners();
   const { admitted } = usePractice();
-  const [readyFor, setReadyFor] = useState<string | null>(null);
+  const [readyFor, setReadyFor] = useState<{ accountId: string; learnerId: string; skipChecks: boolean } | null>(null);
   const learnerId = selectedLearner?.id;
   const accountId = selectedLearner?.account_id;
 
@@ -40,52 +42,80 @@ export function PracticeWizardScreen() {
       }
       const allowed = learnerId && admitted && await hasPracticeAccess();
       if (!current) return;
-      if (allowed) setReadyFor(learnerId);
-      else router.replace('/home');
+      if (allowed && accountId) {
+        const skipChecks = await readSkipPracticeChecks(accountId, learnerId);
+        if (current) setReadyFor({ accountId, learnerId, skipChecks });
+      } else router.replace('/home');
     })().catch(() => { if (current) router.replace('/home'); });
     return () => { current = false; };
   }, [accountId, admitted, learnerId, loading]));
 
-  return selectedLearner && admitted && readyFor === selectedLearner.id
-    ? <PracticeWizard key={selectedLearner.id} learner={selectedLearner} />
+  return selectedLearner && admitted && readyFor?.learnerId === selectedLearner.id && readyFor.accountId === selectedLearner.account_id
+    ? <PracticeWizard key={`${selectedLearner.account_id}:${selectedLearner.id}`} learner={selectedLearner} skipChecks={readyFor.skipChecks} />
     : <SafeAreaView style={styles.screen}><ActivityIndicator style={styles.loading} color={colors.accentInk} /></SafeAreaView>;
 }
 
-function PracticeWizard({ learner }: { learner: Learner }) {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [checks, setChecks] = useState<string[]>([]);
+function PracticeWizard({ learner, skipChecks }: { learner: Learner; skipChecks: boolean }) {
+  // Keep this entry's flow stable if the screen refocuses after saving a preference.
+  const [skippedChecks] = useState(skipChecks);
+  const [step, setStep] = useState<1 | 2>(skipChecks ? 2 : 1);
+  const [checks, setChecks] = useState<string[]>(() => skipChecks ? practiceRequirements.map(item => item.id) : []);
+  const [dontAskAgain, setDontAskAgain] = useState(skipChecks);
   const [mode, setMode] = useState<'generated' | 'destination'>('generated');
   const [duration, setDuration] = useState('45');
   const [route, setRoute] = useState<PracticeRoute | null>(null);
-  const [phase, setPhase] = useState<'idle' | 'generating' | 'starting'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'generating' | 'starting'>('idle');
   const [error, setError] = useState<string | null>(null);
   const scroll = useRef<ScrollView>(null);
   const operation = useRef<AbortController | null>(null);
   const starting = useRef(false);
+  const savingPreference = useRef(false);
   const busy = phase !== 'idle';
   const allChecked = practiceRequirements.every(item => checks.includes(item.id));
   const startDisabled = busy || (mode === 'generated' && !route);
+  const totalSteps = skippedChecks ? 1 : 2;
+  const currentStep = skippedChecks ? 1 : step;
+  const canReturnToChecks = step === 2 && !skippedChecks;
+  const navigationLocked = phase === 'starting' || phase === 'saving';
 
   useEffect(() => () => operation.current?.abort(), []);
 
   const goBack = useCallback(() => {
     // Once recording starts, keep this screen mounted until the handoff completes.
-    if (starting.current) return;
+    if (starting.current || savingPreference.current) return;
     operation.current?.abort();
     operation.current = null;
     setPhase('idle');
     setError(null);
-    if (step === 2) {
+    if (canReturnToChecks) {
       setStep(1);
       scroll.current?.scrollTo({ y: 0, animated: false });
     } else if (router.canGoBack()) router.back();
     else router.replace('/home');
-  }, [step]);
+  }, [canReturnToChecks]);
 
   useFocusEffect(useCallback(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => { goBack(); return true; });
     return () => subscription.remove();
   }, [goBack]));
+
+  async function toggleDontAskAgain() {
+    if (savingPreference.current) return;
+    savingPreference.current = true;
+    const nextValue = !dontAskAgain;
+    setDontAskAgain(nextValue);
+    setPhase('saving');
+    setError(null);
+    try {
+      await saveSkipPracticeChecks(learner.account_id, learner.id, nextValue);
+    } catch {
+      setDontAskAgain(!nextValue);
+      setError('Could not save your preference. Please try again.');
+    } finally {
+      savingPreference.current = false;
+      setPhase('idle');
+    }
+  }
 
   async function generate() {
     if (operation.current || starting.current || step !== 2 || mode !== 'generated' || !duration) return;
@@ -122,7 +152,7 @@ function PracticeWizard({ learner }: { learner: Learner }) {
         mode: 'destination', requestedMinutes: 0, origin: { latitude: 0, longitude: 0 },
         stops: [], geometry: [], estimatedSeconds: 0, distanceMeters: 0,
       };
-      const session = await startPractice(learner, selected, checks);
+      const session = await startPractice(learner, selected, checks, skippedChecks ? 'learner_preference' : 'session');
       // Replace setup with the live session. Only generated routes hand off to Maps.
       router.replace('/practice/active');
       const mapsUrl = appleMapsUrl(session.route);
@@ -145,29 +175,41 @@ function PracticeWizard({ learner }: { learner: Learner }) {
 
   return <SafeAreaView style={styles.screen}>
     <View accessibilityRole="progressbar" accessibilityLabel="Practice setup progress"
-      aria-valuemin={0} aria-valuemax={100} aria-valuenow={step * 50}
-      aria-valuetext={`${step === 1 ? 'Before you drive' : 'Route settings'}, ${step} of 2`} style={styles.progressTrack}>
-      <View style={[styles.progressFill, { width: `${step * 50}%` }]} />
+      aria-valuemin={0} aria-valuemax={100} aria-valuenow={currentStep / totalSteps * 100}
+      aria-valuetext={`${step === 1 ? 'Before you drive' : 'Route settings'}, ${currentStep} of ${totalSteps}`} style={styles.progressTrack}>
+      <View style={[styles.progressFill, { width: `${currentStep / totalSteps * 100}%` }]} />
     </View>
     <View style={styles.header}>
-      <Pressable accessibilityRole="button" accessibilityLabel={step === 1 ? 'Back to Home' : 'Back to pre-drive checks'}
-        accessibilityState={{ disabled: phase === 'starting' }} disabled={phase === 'starting'} onPress={goBack} style={styles.backButton}>
+      <Pressable accessibilityRole="button" accessibilityLabel={canReturnToChecks ? 'Back to pre-drive checks' : 'Back to Home'}
+        accessibilityState={{ disabled: navigationLocked }} disabled={navigationLocked} onPress={goBack} style={styles.backButton}>
         <AppIcon name="back" size={23} />
       </Pressable>
       <Text style={styles.headerTitle}>Start practice</Text>
-      <Text style={styles.stepBadge}>{step} of 2</Text>
+      <Text style={styles.stepBadge}>{currentStep} of {totalSteps}</Text>
     </View>
-    <ScrollView ref={scroll} style={styles.body} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bounces={false}>
+    <ScrollView ref={scroll} style={styles.body} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.introduction}>
         <View style={styles.iconCircle}><AppIcon name={step === 1 ? 'shield' : 'route'} size={30} color={colors.accentInk} /></View>
         <Text accessibilityRole="header" style={styles.title}>{step === 1 ? 'Before you drive' : 'Route settings'}</Text>
       </View>
       <LearnerIdentity id={learner.id} name={learner.name} />
-      {step === 1 ? <View style={styles.checks}>
+      {step === 1 ? <>
+        <View style={styles.checks}>
           {practiceRequirements.map(item => <RequirementCheckbox key={item.id} title={item.title}
-            checked={checks.includes(item.id)} onChange={checked => setChecks(current => checked
+            checked={checks.includes(item.id)} disabled={busy} onChange={checked => setChecks(current => checked
               ? [...new Set([...current, item.id])] : current.filter(id => id !== item.id))} />)}
-        </View> : <View style={styles.fields}>
+        </View>
+        <Pressable accessibilityRole="checkbox" accessibilityLabel="Don't ask me again"
+          accessibilityHint="Skip pre-drive checks for this learner next time."
+          accessibilityState={{ checked: dontAskAgain, disabled: busy }} aria-checked={dontAskAgain}
+          disabled={busy} onPress={() => void toggleDontAskAgain()} style={styles.rememberChoice}>
+          <View pointerEvents="none" aria-hidden importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+            <Checkbox value={dontAskAgain} color={dontAskAgain ? colors.accentInk : colors.neutralBorder}
+              style={styles.rememberCheckbox} tabIndex={-1} />
+          </View>
+          <Text style={styles.rememberLabel}>Don’t ask me again</Text>
+        </Pressable>
+      </> : <View style={styles.fields}>
         <View accessibilityRole="radiogroup" accessibilityLabel="Route mode" style={styles.segment}>
           {(['generated', 'destination'] as const).map(value => <Pressable key={value} accessibilityRole="radio"
             accessibilityState={{ checked: mode === value, disabled: busy }} disabled={busy}
@@ -199,11 +241,13 @@ function PracticeWizard({ learner }: { learner: Learner }) {
     <View style={styles.footer}>
       <View style={styles.actions}>
         {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-        {step === 1 ? <PrimaryButton label="Next" fullWidth disabled={!allChecked} onPress={() => {
-          if (!allChecked) return;
-          setStep(2);
-          scroll.current?.scrollTo({ y: 0, animated: false });
-        }} /> : mode === 'destination' ? <PrimaryButton label={buttonLabel} fullWidth
+        {step === 1 ? <PrimaryButton label="Next" fullWidth disabled={!allChecked || busy}
+          loading={phase === 'saving'} onPress={() => {
+            if (!allChecked || savingPreference.current) return;
+            setStep(2);
+            setError(null);
+            scroll.current?.scrollTo({ y: 0, animated: false });
+          }} /> : mode === 'destination' ? <PrimaryButton label={buttonLabel} fullWidth
           disabled={startDisabled} loading={phase === 'starting'} onPress={() => void start()} />
           : <Pressable accessibilityRole="button" accessibilityLabel={buttonLabel}
           accessibilityState={{ disabled: startDisabled, busy: phase === 'starting' }}
@@ -233,6 +277,9 @@ const styles = StyleSheet.create({
   iconCircle: { width: 64, height: 64, borderRadius: 22, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, fontFamily: fonts.semibold, fontSize: 26, lineHeight: 33, color: colors.ink },
   checks: { gap: 12, marginTop: 22 },
+  rememberChoice: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, marginTop: 16 },
+  rememberCheckbox: { width: 22, height: 22, borderRadius: 5 },
+  rememberLabel: { flex: 1, fontFamily: fonts.regular, fontSize: 16, lineHeight: 22, color: colors.ink },
   fields: { gap: 20, marginTop: 24 },
   segment: { flexDirection: 'row', backgroundColor: colors.neutralSoft, borderRadius: 17, padding: 4 },
   segmentOption: { flex: 1, paddingHorizontal: 5, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },

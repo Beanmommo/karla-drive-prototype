@@ -1,4 +1,5 @@
-// Confirmed by the supervisor for each drive. Keep IDs stable for saved sessions.
+// Pre-drive prompts, with an optional learner-scoped preference to skip repeat prompts.
+// Keep IDs stable for saved sessions and bump the preference key version if requirements change.
 export const practiceRequirements = [
   { id: 'plates', title: 'I’ve checked the car is safe and L plates are displayed front and rear.' },
   { id: 'supervision', title: 'I have my full licence with me and am sober and fit to supervise beside the learner.' },

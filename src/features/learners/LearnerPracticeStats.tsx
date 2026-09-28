@@ -97,9 +97,9 @@ export function LearnerPracticeStats({ learner }: { learner: Learner }) {
     <View style={styles.section}>
       <View style={[styles.stats, (width < 360 || fontScale > 1.3) && styles.stacked]}>
         <HoursStat label="Total hours" minutes={stats.totalMinutes} target={targets?.total}
-          onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id, filter: 'all' } })} />
+          onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id } })} />
         <HoursStat label="Night hours" minutes={stats.nightMinutes} target={targets?.night} night
-          onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id, filter: 'night' } })} />
+          onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id, badge: 'night_drive' } })} />
       </View>
       {targets && (
         <Link href={PRACTICE_REQUIREMENTS_URL} target="_blank" style={styles.requirements}>
