@@ -43,7 +43,7 @@ export function ModuleStatusesProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       const records = await overlayPracticeReviews(learner.account_id, learner.id, current.current[key]?.records ?? []).catch(() => current.current[key]?.records ?? []);
-      if (isCurrent()) update(key, { records, error: error instanceof Error ? error.message : 'Could not load module statuses.' });
+      if (isCurrent()) update(key, { records, error: error instanceof Error ? error.message : 'Could not load module ratings.' });
     } finally {
       if (isCurrent()) update(key, { loading: false });
     }
@@ -51,7 +51,7 @@ export function ModuleStatusesProvider({ children }: { children: ReactNode }) {
 
   const save = useCallback(async (learner: Pick<Learner, 'id' | 'account_id'>, moduleId: ModuleId, status: ModuleStatus) => {
     const key = keyFor(learner);
-    if (current.current[key]?.saving) throw new Error('A status is already being saved.');
+    if (current.current[key]?.saving) throw new Error('A rating is already being saved.');
     // Invalidate older reads so a slow refresh cannot overwrite a saved assessment.
     versions.current[key] = (versions.current[key] ?? 0) + 1;
     update(key, { saving: true, loading: false });

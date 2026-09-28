@@ -12,6 +12,9 @@ export const colors = {
   accentPressed: '#72C3F6',
   accentEdge: '#59ACE0',
   accentInk: '#256087',
+  star: '#A9690B',
+  starFill: '#F8C85C',
+  starSoft: '#FFF6DC',
   error: '#A12D32',
   errorSoft: '#FFF0F0',
 } as const;

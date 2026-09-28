@@ -7,7 +7,8 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { colors, fonts } from '../../theme';
 import type { Learner } from '../learners/model';
 import { useLearnerModules } from '../modules/ModuleStatusesProvider';
-import { moduleCatalogue, moduleStatusLabels, type ModuleId, type ModuleStatus } from '../modules/model';
+import { moduleCatalogue, type ModuleId, type ModuleStatus } from '../modules/model';
+import { ModuleRatingInput, ModuleStars } from '../modules/ModuleStars';
 import { eventCounts, eventModules, elapsedSeconds, formatDuration, gapSeconds, type PracticeEvent, type PracticeSession, type StoredSession, type TrackPoint } from './model';
 import { usePractice } from './PracticeProvider';
 import { RoutePreview } from './RoutePreview';
@@ -109,14 +110,14 @@ export function SessionReviewContent({ sessionId, learner, onClose }: { sessionI
     {record.dirty && learner.account_id !== 'local-demo' && <Text style={styles.notice}>Saved on this device · upload pending</Text>}
     {session.review_conflicts.length > 0 && <Text style={styles.notice}>Some module assessments changed after this review began. Those newer assessments were preserved; your session review is still saved.</Text>}
     <View style={styles.reviewHeading}><Text style={styles.heading}>{reviewed ? 'Supervisor review' : 'Review the modules'}</Text>
-      {!reviewed && <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: showAll }} onPress={() => setShowAll(value => !value)}>
+      {!reviewed && <Pressable accessibilityRole="checkbox" aria-checked={showAll} onPress={() => setShowAll(value => !value)}>
         <Text style={styles.link}>{showAll ? 'Show priority' : 'Show all'}</Text></Pressable>}</View>
-    {!reviewed && <Text style={styles.notice}>Showing Need practice and Not performed by default. Change only the assessments you want to update.</Text>}
+    {!reviewed && <Text style={styles.notice}>Showing modules with fewer than 3 stars. Update the ratings you observed during this drive.</Text>}
     {reviewed ? <>
       {Object.entries(session.review).map(([moduleId, choice]) => <View key={moduleId} style={styles.countRow}>
         <Text style={[styles.body, styles.flex]}>{moduleCatalogue.find(module => module.id === moduleId)?.title}</Text>
-        <Text style={styles.count}>{choice ? moduleStatusLabels[choice.status] : ''}</Text></View>)}
-      {!Object.keys(session.review).length && <Text style={styles.body}>Reviewed with no module status changes.</Text>}
+        {choice && <ModuleStars status={choice.status} />}</View>)}
+      {!Object.keys(session.review).length && <Text style={styles.body}>Reviewed with no module rating changes.</Text>}
       <PrimaryButton label="Done" fullWidth onPress={onClose} />
     </> : <>
       {!baseline && <Text style={styles.notice}>{assessments.error ?? 'Loading current module assessments…'}</Text>}
@@ -126,18 +127,13 @@ export function SessionReviewContent({ sessionId, learner, onClose }: { sessionI
         return <View key={module.id} style={styles.module}>
           <Text style={styles.moduleTitle}>{module.title}</Text>
           {evidence.length > 0 && <Text style={styles.evidence}>{evidence.length} detected {evidence.length === 1 ? 'activity' : 'activities'} · supervisor review needed</Text>}
-          <View accessibilityRole="radiogroup" accessibilityLabel={module.title + ' assessment'} style={styles.choices}>
-            {(Object.keys(moduleStatusLabels) as ModuleStatus[]).map(value => <Pressable key={value} accessibilityRole="radio"
-              accessibilityLabel={module.title + ': ' + moduleStatusLabels[value]} accessibilityState={{ checked: status === value, disabled: saving }}
-              disabled={saving} onPress={() => setDraft(current => {
-                const next = { ...current };
-                if (value === baseline[module.id].status) delete next[module.id];
-                else next[module.id as ModuleId] = { status: value, expectedUpdatedAt: baseline[module.id].updatedAt };
-                return next;
-              })} style={[styles.choice, status === value && styles.choiceSelected]}>
-              <Text style={[styles.choiceText, status === value && styles.choiceTextSelected]}>{moduleStatusLabels[value]}</Text>
-            </Pressable>)}
-          </View>
+          <ModuleRatingInput status={status} disabled={saving} label={module.title + ' rating'}
+            onChange={value => setDraft(current => {
+              const next = { ...current };
+              if (value === baseline[module.id].status) delete next[module.id];
+              else next[module.id as ModuleId] = { status: value, expectedUpdatedAt: baseline[module.id].updatedAt };
+              return next;
+            })} />
         </View>;
       })}
       {saveError && <Text accessibilityRole="alert" style={styles.error}>{saveError}</Text>}
@@ -162,9 +158,7 @@ const styles = StyleSheet.create({
   count: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink }, reviewHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
   module: { borderWidth: 1, borderColor: colors.border, borderRadius: 18, padding: 14, gap: 12 },
   moduleTitle: { fontFamily: fonts.medium, fontSize: 17, color: colors.ink }, evidence: { fontFamily: fonts.regular, fontSize: 12, color: colors.accentInk },
-  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, choice: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 9, paddingVertical: 12, borderRadius: 12, backgroundColor: colors.neutralSoft },
-  choiceSelected: { backgroundColor: colors.accentSoft }, choiceText: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
-  choiceTextSelected: { color: colors.accentInk, fontFamily: fonts.medium }, link: { color: colors.accentInk, fontFamily: fonts.medium, fontSize: 15 },
+  link: { color: colors.accentInk, fontFamily: fonts.medium, fontSize: 15 },
   secondary: { padding: 14, alignItems: 'center' }, discard: { minHeight: 48, padding: 14, borderRadius: 15, backgroundColor: colors.errorSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   discardText: { fontFamily: fonts.medium, fontSize: 16, color: colors.error }, error: { fontFamily: fonts.regular, color: colors.error, fontSize: 14 },
 });

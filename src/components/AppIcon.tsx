@@ -1,3 +1,5 @@
+import Star from 'lucide-react-native/icons/star';
+import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import CarFront from 'lucide-react-native/icons/car-front';
 import House from 'lucide-react-native/icons/house';
 import Play from 'lucide-react-native/icons/play';
@@ -24,7 +26,7 @@ import { colors } from '../theme';
 
 // Import individual icons so Metro only bundles the Lucide icons we use.
 const icons = {
-  home: House, car: CarFront, play: Play, user: UserRound, back: ArrowLeft,
+  star: Star, chevronLeft: ChevronLeft, home: House, car: CarFront, play: Play, user: UserRound, back: ArrowLeft,
   chevronDown: ChevronDown, calendar: CalendarDays, location: MapPin,
   plus: Plus, shield: ShieldCheck, close: X, check: Check, clock: Clock, moon: Moon,
   modules: BookOpen, chevronRight: ChevronRight,
@@ -36,9 +38,10 @@ type AppIconProps = {
   size?: number;
   color?: ColorValue;
   strokeWidth?: number;
+  fill?: ColorValue;
 };
 
-export function AppIcon({ name, size = 24, color = colors.ink, strokeWidth = 2 }: AppIconProps) {
+export function AppIcon({ name, size = 24, color = colors.ink, strokeWidth = 2, fill = 'none' }: AppIconProps) {
   const Icon = icons[name];
-  return <Icon size={size} color={color} strokeWidth={strokeWidth} />;
+  return <Icon size={size} color={color} strokeWidth={strokeWidth} fill={fill} />;
 }

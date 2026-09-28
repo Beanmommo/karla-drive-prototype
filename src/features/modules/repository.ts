@@ -26,7 +26,7 @@ export async function listAssessments(learner: Pick<Learner, 'id' | 'account_id'
   const { data, error } = await supabase.from('learner_module_statuses')
     .select('account_id,learner_id,module_id,status,updated_at')
     .eq('account_id', learner.account_id).eq('learner_id', learner.id);
-  if (error) throw new Error('Could not refresh module statuses. Check your connection and try again.');
+  if (error) throw new Error('Could not refresh module ratings. Check your connection and try again.');
   return overlayPracticeReviews(learner.account_id, learner.id, parseAssessments(data, learner.account_id, learner.id));
 }
 
@@ -38,6 +38,6 @@ export async function saveAssessment(learner: Pick<Learner, 'id' | 'account_id'>
   const { data, error } = await supabase.rpc('set_learner_module_status', {
     p_learner_id: learner.id, p_module_id: moduleId, p_status: status,
   }).single();
-  if (error) throw new Error('Could not save this status. Check your connection and try again.');
+  if (error) throw new Error('Could not save this rating. Check your connection and try again.');
   return parseAssessments([data], learner.account_id, learner.id)[0];
 }

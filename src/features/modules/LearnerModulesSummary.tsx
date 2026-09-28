@@ -7,20 +7,21 @@ import type { Learner } from '../learners/model';
 import { useLearnerModules } from './ModuleStatusesProvider';
 
 export function LearnerModulesSummary({ learner }: { learner: Learner }) {
-  const { summary: { excellent, total }, loaded, error } = useLearnerModules(learner);
-  const count = loaded ? String(excellent) : error ? '—' : '…';
+  const { summary: { stars, maxStars }, loaded, error } = useLearnerModules(learner);
+  const count = loaded ? String(stars) : error ? '—' : '…';
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={loaded ? `Modules, ${excellent} of ${total}${error ? ', saved statuses' : ''}` : `Modules, ${error ? 'status unavailable' : 'loading'}`}
-      accessibilityHint="View all modules and their status"
+      accessibilityLabel={loaded ? `Modules, ${stars} of ${maxStars} stars${error ? ', saved ratings' : ''}` : `Modules, ${error ? 'ratings unavailable' : 'loading'}`}
+      accessibilityHint="Choose a stage and view module ratings"
       onPress={() => router.push({ pathname: '/learners/[learnerId]/modules', params: { learnerId: learner.id } })}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View aria-hidden style={styles.contents}>
         <View style={styles.icon}><AppIcon name="modules" color={colors.accentInk} /></View>
         <Text style={styles.title}>Modules</Text>
-        <Text style={styles.count}>{count}/{total}</Text>
+        <AppIcon name="star" size={20} color={colors.star} fill={colors.starFill} />
+        <Text style={styles.count}>{count}/{maxStars}</Text>
         <AppIcon name="chevronRight" size={22} color={colors.muted} />
       </View>
     </Pressable>

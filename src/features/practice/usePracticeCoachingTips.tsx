@@ -6,7 +6,7 @@ import { ModuleTipsCarousel } from './ModuleTipsCarousel';
 export function usePracticeCoachingTips(learner: Learner | undefined) {
   const assessments = useLearnerModules(learner);
   const modules = assessments.modules.filter(module =>
-    (module.status === 'needs_practice' || module.status === 'not_performed') && getModuleCoachingTip(module));
+    module.status !== 'excellent' && getModuleCoachingTip(module));
 
   // Empty, loading, and unavailable tips stay hidden during practice. Placeholders
   // belong on module details and must not count as coaching content here.

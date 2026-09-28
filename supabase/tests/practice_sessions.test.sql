@@ -41,6 +41,11 @@ select is((select count(*)::int from practice_points where session_id='ffffffff-
 select is(sync_practice_session(pg_temp.record('ffffffff-ffff-4fff-8fff-ffffffffffff'),99,pg_temp.points(),'[]')->>'discarded','true','A delayed upload cannot resurrect a discard');
 select is((select sessions_count::int from practice_totals('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')),3,'Discard is excluded from totals');
 select throws_ok($$select sync_practice_session(pg_temp.record('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),1,'[]','[{"id":"bad","kind":"turn"}]')$$,'23514',null,'Malformed detected activities are rejected');
+select lives_ok($$select sync_practice_session(pg_temp.record('abababab-abab-4bab-8bab-abababababab','finished','{"reversing":{"status":"developing","expectedUpdatedAt":null},"attention":{"status":"excellent","expectedUpdatedAt":null}}',floor(extract(epoch from now())*1000)::bigint),1,'[]','[]')$$,'Offline review accepts both new modules and the two-star rating');
+select is((select status from learner_module_statuses where module_id='reversing'),'developing','Two-star review persists');
+select is((select status from learner_module_statuses where module_id='attention'),'excellent','New stage four module review persists');
+select lives_ok($$select sync_practice_session(pg_temp.record('abababab-abab-4bab-8bab-abababababab','finished','{"reversing":{"status":"developing","expectedUpdatedAt":null},"attention":{"status":"excellent","expectedUpdatedAt":null}}',floor(extract(epoch from now())*1000)::bigint),1,'[]','[]')$$,'Two-star review retries are idempotent');
+select throws_ok($$select sync_practice_session(pg_temp.record('bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc','finished','{"reversing":{"status":"4","expectedUpdatedAt":null}}',floor(extract(epoch from now())*1000)::bigint),1,'[]','[]')$$,'23514',null,'Offline reviews reject invalid ratings');
 select set_config('request.jwt.claims','{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}',true);
 select is((select count(*)::int from practice_sessions),0,'Other supervisors cannot read sessions');
 select is((select count(*)::int from practice_points),0,'Other supervisors cannot read GPS traces');

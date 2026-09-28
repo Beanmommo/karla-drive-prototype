@@ -8,18 +8,19 @@ import { colors, fonts } from '../../theme';
 import { LearnerAvatar } from '../learners/LearnerAvatar';
 import { useLearners } from '../learners/LearnersProvider';
 import type { Learner } from '../learners/model';
-import { moduleStatusLabels } from './model';
+import { getModuleStage, getModuleSummary, moduleStatusLabels } from './model';
 import { useLearnerModules } from './ModuleStatusesProvider';
 import { ModuleStatusEditor } from './ModuleStatusEditor';
-import { ModuleStatusBadge } from './ModuleStatusBadge';
+import { ModuleStars } from './ModuleStars';
+import { StageCarousel } from './StageCarousel';
 import { ModuleCoachingTips } from './ModuleCoachingTips';
 
 function useModuleLearner() {
-  const { learnerId, moduleId } = useLocalSearchParams<{ learnerId?: string; moduleId?: string }>();
+  const { learnerId, moduleId, stageId } = useLocalSearchParams<{ learnerId?: string; moduleId?: string; stageId?: string }>();
   const { learners, loading, error, refresh } = useLearners();
   // Resolve only within the signed-in account; never fall back to another learner.
   const learner = learners.find((item) => item.id === learnerId);
-  return { learner, moduleId, loading, error, refresh };
+  return { learner, moduleId, stageId, loading, error, refresh };
 }
 
 function ModulePage({ title, onBack, backLabel, children }: {
@@ -68,12 +69,12 @@ function UnavailableLearner({ loading, error, refresh }: {
 
 function AssessmentNotice({ assessments }: { assessments: ReturnType<typeof useLearnerModules> }) {
   if (assessments.error) return <View style={styles.notice}>
-    <Text accessibilityRole="alert" style={styles.body}>{assessments.loaded ? 'Showing saved statuses. ' : ''}{assessments.error}</Text>
+    <Text accessibilityRole="alert" style={styles.body}>{assessments.loaded ? 'Showing saved ratings. ' : ''}{assessments.error}</Text>
     <Pressable accessibilityRole="button" onPress={() => void assessments.refresh()} style={styles.retry}>
-      <Text style={styles.retryText}>Retry statuses</Text>
+      <Text style={styles.retryText}>Retry ratings</Text>
     </Pressable>
   </View>;
-  if (!assessments.loaded) return <Text style={styles.body}>Loading statuses…</Text>;
+  if (!assessments.loaded) return <Text style={styles.body}>Loading ratings…</Text>;
   return null;
 }
 
@@ -82,54 +83,70 @@ function backToHome() {
   else router.replace('/home');
 }
 
+function StarTotal({ stars, maxStars, loaded, label }: { stars: number; maxStars: number; loaded: boolean; label: string }) {
+  return <View accessible accessibilityLabel={`${label}, ${loaded ? stars : 'unavailable'} of ${maxStars} stars`} style={styles.starTotal}>
+    <View style={styles.starIcon}><AppIcon name="star" size={30} color={colors.star} fill={colors.starFill} /></View>
+    <View style={styles.rowText}>
+      <Text style={styles.totalLabel}>{label}</Text>
+      <Text style={styles.totalCount}>{loaded ? stars : '—'} <Text style={styles.totalMax}>/ {maxStars} stars</Text></Text>
+    </View>
+  </View>;
+}
+
 export function ModulesScreen() {
   const { learner, loading, error, refresh } = useModuleLearner();
   const assessments = useLearnerModules(learner);
-  const { modules, summary } = assessments;
+  return <ModulePage title="Modules" onBack={backToHome} backLabel="Back to Home">
+    {!learner ? <UnavailableLearner loading={loading} error={error} refresh={refresh} /> : (
+      <ScrollView contentContainerStyle={styles.stagesContent}>
+        {(!assessments.loaded || assessments.error) && <View style={styles.stageNotice}>
+          <AssessmentNotice assessments={assessments} />
+        </View>}
+        <StageCarousel key={learner.id} modules={assessments.modules} loaded={assessments.loaded}
+          onSelect={stageId => router.push({ pathname: '/learners/[learnerId]/modules/stages/[stageId]',
+            params: { learnerId: learner.id, stageId: String(stageId) } })} />
+      </ScrollView>
+    )}
+  </ModulePage>;
+}
 
-  return (
-    <ModulePage title="Modules" onBack={backToHome} backLabel="Back to Home">
-      {!learner ? <UnavailableLearner loading={loading} error={error} refresh={refresh} /> : (
-        <FlatList
-          data={modules}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={
-            <View style={styles.introduction}>
-              <LearnerIdentity learner={learner} />
-              <View style={styles.listHeading}>
-                <Text accessibilityRole="header" style={styles.pageTitle}>Your modules</Text>
-                <Text style={styles.summary}>{assessments.loaded ? summary.excellent : assessments.error ? '—' : '…'}/{summary.total}</Text>
-              </View>
-              <AssessmentNotice assessments={assessments} />
-            </View>
-          }
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item, index }) => (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${item.title}, ${assessments.loaded ? moduleStatusLabels[item.status] : 'Status unavailable'}`}
-              accessibilityHint="View module details"
-              onPress={() => router.push({
-                pathname: '/learners/[learnerId]/modules/[moduleId]',
-                params: { learnerId: learner.id, moduleId: item.id },
-              })}
-              style={({ pressed }) => [styles.moduleRow, pressed && styles.pressed]}
-            >
-              <View aria-hidden style={styles.rowContents}>
-                <View style={styles.moduleNumber}><Text style={styles.moduleNumberText}>{String(index + 1).padStart(2, '0')}</Text></View>
-                <View style={styles.rowText}>
-                  <Text style={styles.moduleTitle}>{item.title}</Text>
-                  {assessments.loaded ? <ModuleStatusBadge status={item.status} /> : <Text style={styles.body}>{assessments.error ? 'Status unavailable' : 'Loading…'}</Text>}
-                </View>
-                <AppIcon name="chevronRight" size={20} color={colors.muted} />
-              </View>
-            </Pressable>
-          )}
-        />
-      )}
-    </ModulePage>
-  );
+export function StageModulesScreen() {
+  const { learner, stageId, loading, error, refresh } = useModuleLearner();
+  const assessments = useLearnerModules(learner);
+  const stage = getModuleStage(stageId);
+  const modules = assessments.modules.filter(module => module.stage === stage?.id);
+  function goBack() {
+    if (router.canGoBack()) router.back();
+    else if (learner) router.replace({ pathname: '/learners/[learnerId]/modules', params: { learnerId: learner.id } });
+    else router.replace('/home');
+  }
+  return <ModulePage title={stage ? `Stage ${stage.id}` : 'Stage unavailable'} onBack={goBack} backLabel="Back to stages">
+    {!learner ? <UnavailableLearner loading={loading} error={error} refresh={refresh} /> : !stage ? (
+      <View style={styles.empty}><Text style={styles.body}>Choose one of the four stages to view its modules.</Text></View>
+    ) : <FlatList data={modules} keyExtractor={item => item.id} contentContainerStyle={styles.listContent}
+      ListHeaderComponent={<View style={styles.introduction}>
+        <LearnerIdentity learner={learner} />
+        <Text accessibilityRole="header" style={styles.pageTitle}>{stage.title}</Text>
+        <Text style={styles.body}>{stage.supervisor}</Text>
+        <StarTotal {...getModuleSummary(modules)} loaded={assessments.loaded} label={`Stage ${stage.id} stars`} />
+        <AssessmentNotice assessments={assessments} />
+      </View>}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      renderItem={({ item, index }) => <Pressable accessibilityRole="button"
+        accessibilityLabel={`${item.title}, ${assessments.loaded ? moduleStatusLabels[item.status] : 'Rating unavailable'}`}
+        accessibilityHint="View module details and update its star rating"
+        onPress={() => router.push({ pathname: '/learners/[learnerId]/modules/[moduleId]', params: { learnerId: learner.id, moduleId: item.id } })}
+        style={({ pressed }) => [styles.moduleRow, pressed && styles.pressed]}>
+        <View aria-hidden style={styles.rowContents}>
+          <View style={styles.moduleNumber}><Text style={styles.moduleNumberText}>{String(index + 1).padStart(2, '0')}</Text></View>
+          <View style={styles.rowText}>
+            <Text style={styles.moduleTitle}>{item.title}</Text>
+            {assessments.loaded ? <ModuleStars status={item.status} /> : <Text style={styles.body}>— / 3 stars</Text>}
+          </View>
+          <AppIcon name="chevronRight" size={20} color={colors.muted} />
+        </View>
+      </Pressable>} />}
+  </ModulePage>;
 }
 
 export function ModuleDetailScreen() {
@@ -138,6 +155,7 @@ export function ModuleDetailScreen() {
   const module = assessments.modules.find((item) => item.id === moduleId);
   function goBack() {
     if (router.canGoBack()) router.back();
+    else if (learner && module) router.replace({ pathname: '/learners/[learnerId]/modules/stages/[stageId]', params: { learnerId: learner.id, stageId: String(module.stage) } });
     else if (learner) router.replace({ pathname: '/learners/[learnerId]/modules', params: { learnerId: learner.id } });
     else router.replace('/home');
   }
@@ -153,6 +171,7 @@ export function ModuleDetailScreen() {
         <ScrollView contentContainerStyle={styles.detailContent}>
           <LearnerIdentity learner={learner} />
           <View style={styles.detailIntro}>
+            <Text style={styles.totalLabel}>Stage {module.stage}</Text>
             <View style={styles.detailHeading}>
               <View style={styles.detailIcon}><AppIcon name="modules" size={30} color={colors.accentInk} /></View>
               <Text accessibilityRole="header" style={styles.detailTitle}>{module.title}</Text>
@@ -188,6 +207,13 @@ export function ModuleDetailScreen() {
 
 const styles = StyleSheet.create({
   notice: { gap: 4 },
+  stagesContent: { flexGrow: 1, justifyContent: 'center', width: '100%', paddingVertical: 24, gap: 16 },
+  stageNotice: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 24 },
+  starTotal: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: colors.starSoft, borderRadius: 22, padding: 20 },
+  starIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  totalLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted },
+  totalCount: { fontFamily: fonts.semibold, fontSize: 30, color: colors.ink },
+  totalMax: { fontFamily: fonts.regular, fontSize: 16, color: colors.muted },
   screen: { flex: 1, backgroundColor: colors.background },
   header: { width: '100%', maxWidth: 480, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
   back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24 },
@@ -197,9 +223,7 @@ const styles = StyleSheet.create({
   introduction: { gap: 24, paddingTop: 12, paddingBottom: 20 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   learnerName: { flex: 1, fontFamily: fonts.regular, fontSize: 17, color: colors.muted },
-  listHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
-  pageTitle: { flexGrow: 1, fontFamily: fonts.medium, fontSize: 28, color: colors.ink },
-  summary: { fontFamily: fonts.medium, fontSize: 22, color: colors.accentInk },
+  pageTitle: { fontFamily: fonts.medium, fontSize: 28, color: colors.ink },
   separator: { height: 10 },
   moduleRow: { borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 16 },
   rowContents: { flexDirection: 'row', alignItems: 'center', gap: 12 },

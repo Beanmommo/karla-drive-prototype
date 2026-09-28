@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
-select plan(15);
+select plan(20);
 
 insert into auth.users (id, aud, role) values
   ('11111111-1111-4111-8111-111111111111', 'authenticated', 'authenticated'),
@@ -29,6 +29,13 @@ select throws_ok($$update public.learner_module_statuses set account_id = '22222
   '42501', null, 'Ownership cannot be reassigned');
 select throws_ok($$update public.learner_module_statuses set updated_at = '2000-01-01'$$,
   '42501', null, 'Timestamps cannot be forged');
+
+select is((select status from public.set_learner_module_status('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'turns', 'developing')), 'developing', 'Can save the two-star rating');
+select is((select status from public.set_learner_module_status('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'reversing', 'developing')), 'developing', 'Basic reversing accepts two stars');
+select is((select status from public.set_learner_module_status('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'attention', 'excellent')), 'excellent', 'Attention accepts three stars');
+select is((select status from public.set_learner_module_status('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'reversing', 'not_performed')), 'not_performed', 'Two stars can reset to zero');
+select throws_ok($$select * from public.set_learner_module_status('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'attention', '4')$$,
+  '23514', null, 'Out-of-range ratings are rejected');
 
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
 select is((select count(*)::integer from public.learner_module_statuses), 0, 'Another account cannot read assessments');
