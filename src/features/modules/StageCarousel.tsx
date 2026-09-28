@@ -5,6 +5,7 @@ import { AppIcon } from '../../components/AppIcon';
 import { colors, fonts } from '../../theme';
 import { getModuleSummary, moduleStages, type LearnerModule, type ModuleStageId } from './model';
 import { stageAppearance } from './stageAppearance';
+import { StageIcon } from './StageIcon';
 
 const minimumCardInset = 48;
 const maximumCardWidth = 384;
@@ -58,7 +59,7 @@ export function StageCarousel({ modules, loaded, onSelect }: {
             onPress={() => page === index ? onSelect(stage.id) : selectPage(index)}
             style={({ pressed }) => [styles.card, { backgroundColor: stageAppearance[stage.id].color }, pressed && styles.pressed]}>
             <View aria-hidden style={styles.cardContents}>
-              <View style={styles.icon}><AppIcon name={stageAppearance[stage.id].icon} size={52} color={colors.ink} strokeWidth={1.6} /></View>
+              <StageIcon stageId={stage.id} size={Math.min(160, Math.max(1, cardWidth - 48))} />
               <View style={styles.heading}>
                 <Text style={styles.stageLabel}>STAGE {stage.id}</Text>
                 <Text style={styles.title}>{stage.title}</Text>
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
   cardContents: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24 },
   pressed: { opacity: 0.85 }, heading: { alignItems: 'center', gap: 8 },
   stageLabel: { fontFamily: fonts.semibold, fontSize: 14, letterSpacing: 1.5, color: colors.ink, textAlign: 'center' },
-  icon: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: '#FFFFFF99' },
   title: { fontFamily: fonts.medium, fontSize: 30, lineHeight: 36, color: colors.ink, textAlign: 'center' },
   progress: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
   progressText: { fontFamily: fonts.medium, fontSize: 19, color: colors.ink, textAlign: 'center' },

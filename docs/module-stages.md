@@ -2,6 +2,8 @@
 
 The Home modules card opens a centred four-card stage carousel. Each card shows a centred icon, stage number, title, and stage star total. The carousel uses the full available screen width while cards grow to a maximum of 384 points. Lower-opacity neighbouring cards are fully visible when there is room, with partial previews at the screen edges on smaller displays. The selected card remains centred, including the first and last stages. Swipe, choose a page dot, or tap a neighbouring preview to centre a stage. Selecting the centred card opens that stage's modules; selecting a module opens its details and editable rating. Every stage is available without an unlock requirement.
 
+All four carousel cards and stage headers use the transparent illustrations in `assets/`: `stage-1-car-control-tall.png` (tall cone and L plate), `stage-2-basic-drives.png` (neighbourhood roads), `stage-3-complex-drives.png` (highway and rain), and `stage-4-rehearsing-solo-v2.png` (borderless navigation map). `StageIcon` statically requires each image so it is bundled for native and web. Cards display the artwork directly on their matching pastel background in a consistent frame, trimming transparent margins without stretching the illustrations. The taller cone uses a smaller framing scale to keep its wide base and L plate fully visible. The frame shrinks on narrow screens; stage headers use a compact version of the same artwork.
+
 The catalogue follows the agreed parent-supervisor grouping:
 
 | Stage | Modules | Available stars |

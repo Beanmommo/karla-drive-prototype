@@ -16,6 +16,7 @@ import { ModuleStars } from './ModuleStars';
 import { StageCarousel } from './StageCarousel';
 import { ModuleCoachingTips } from './ModuleCoachingTips';
 import { stageAppearance } from './stageAppearance';
+import { StageIcon } from './StageIcon';
 
 function useModuleLearner() {
   const { learnerId, moduleId, stageId } = useLocalSearchParams<{ learnerId?: string; moduleId?: string; stageId?: string }>();
@@ -37,7 +38,7 @@ function ModulePage({ title, stageId, onBack, backLabel, children }: {
           <AppIcon name="back" size={23} />
         </Pressable>
         {stageId && <View aria-hidden style={[styles.headerStageIcon, { backgroundColor: stageAppearance[stageId].color }]}>
-          <AppIcon name={stageAppearance[stageId].icon} size={22} strokeWidth={1.6} />
+          <StageIcon stageId={stageId} size={32} />
         </View>}
         <Text accessibilityRole="header" style={styles.headerTitle}>{title}</Text>
       </View>
