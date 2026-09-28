@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,22 +8,39 @@ import { colors, fonts } from '../../theme';
 import { LearnerAvatar } from './LearnerAvatar';
 import { useLearners } from './LearnersProvider';
 
-export function LearnerSwitcher() {
+export function LearnerSwitcher({ compact = false, allowAdd = true, learnerId, onSelect }: {
+  compact?: boolean;
+  allowAdd?: boolean;
+  learnerId?: string;
+  onSelect?: (learnerId: string) => void;
+} = {}) {
   const { learners, selectedLearner, selectLearner, loading, offline, error, refresh } = useLearners();
   const [open, setOpen] = useState(false);
+  const triggerContainer = useRef<View>(null);
+  const [anchor, setAnchor] = useState<{ x: number; y: number; width: number } | null>(null);
   const { height } = useWindowDimensions();
   // Reuse the screen's insets so the modal header aligns on its first native mount.
   const insets = useSafeAreaInsets();
-  const initiallyLoading = loading && !selectedLearner;
-  const canAddDirectly = !initiallyLoading && !learners.length && !error;
-  const name = selectedLearner?.name ?? (initiallyLoading ? 'Loading learners…' : error ? 'Choose a learner' : 'Add a learner');
+  const currentLearner = learnerId === undefined ? selectedLearner : learners.find(learner => learner.id === learnerId);
+  const initiallyLoading = loading && !currentLearner;
+  const canAddDirectly = allowAdd && !initiallyLoading && !learners.length && !error;
+  const name = currentLearner?.name ?? (initiallyLoading ? 'Loading learners…' : canAddDirectly ? 'Add a learner' : 'Choose a learner');
+
+  function openSelection() {
+    if (compact) {
+      triggerContainer.current?.measureInWindow((x, y, width) => {
+        setAnchor({ x, y, width });
+        setOpen(true);
+      });
+    } else setOpen(true);
+  }
 
   function trigger(expanded: boolean) {
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={selectedLearner ? `Learner: ${selectedLearner.name}` : name}
-        accessibilityHint={canAddDirectly ? 'Create your first learner' : 'Choose a learner or add another learner'}
+        accessibilityLabel={currentLearner ? `Learner: ${currentLearner.name}` : name}
+        accessibilityHint={canAddDirectly ? 'Create your first learner' : allowAdd ? 'Choose a learner or add another learner' : 'Choose a learner'}
         aria-expanded={canAddDirectly ? undefined : expanded}
         aria-busy={initiallyLoading}
         aria-disabled={initiallyLoading}
@@ -32,29 +49,35 @@ export function LearnerSwitcher() {
           if (canAddDirectly) {
             setOpen(false);
             router.push('/learners/new');
-          } else setOpen(!expanded);
+          } else if (expanded) setOpen(false);
+          else openSelection();
         }}
-        style={({ pressed }) => [styles.trigger, (pressed || expanded) && styles.triggerActive]}
+        hitSlop={compact ? 6 : undefined}
+        style={({ pressed }) => [styles.trigger, compact && styles.compactTrigger, (pressed || expanded) && styles.triggerActive]}
       >
-        {selectedLearner ? <LearnerAvatar learnerId={selectedLearner.id} size={56} /> : (
-          <View style={styles.placeholder}>
+        {currentLearner ? <LearnerAvatar learnerId={currentLearner.id} size={compact ? 32 : 56} /> : (
+          <View style={[styles.placeholder, compact && styles.compactPlaceholder]}>
             {initiallyLoading ? <ActivityIndicator color={colors.accentInk} /> : <AppIcon name="user" size={28} color={colors.accentInk} />}
           </View>
         )}
-        <Text numberOfLines={2} style={styles.name}>{name}</Text>
-        {!canAddDirectly && <View style={expanded && styles.chevronOpen}><AppIcon name="chevronDown" size={22} color={colors.muted} /></View>}
+        <Text numberOfLines={2} style={[styles.name, compact && styles.compactName]}>{name}</Text>
+        {!canAddDirectly && <View style={expanded && styles.chevronOpen}><AppIcon name="chevronDown" size={compact ? 18 : 22} color={colors.muted} /></View>}
       </Pressable>
     );
   }
 
   return (
     <>
-      <View aria-hidden={open}>{trigger(false)}</View>
+      <View ref={triggerContainer} collapsable={false} aria-hidden={open}>{trigger(false)}</View>
       {open && <Modal transparent animationType="fade" onRequestClose={() => setOpen(false)} statusBarTranslucent navigationBarTranslucent>
         <View style={styles.overlay}>
           <Pressable accessibilityRole="button" accessibilityLabel="Close learner selection" style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
-          <View pointerEvents="box-none" style={[styles.safeArea, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
-            <View style={styles.dropdownPosition} accessibilityViewIsModal onAccessibilityEscape={() => setOpen(false)}>
+          <View pointerEvents="box-none" style={[styles.safeArea, !compact && { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
+            <View style={[styles.dropdownPosition, compact && anchor && {
+              position: 'absolute', left: anchor.x, top: anchor.y, width: anchor.width,
+              maxHeight: Math.max(0, height - anchor.y - insets.bottom - 12),
+              paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0,
+            }]} accessibilityViewIsModal onAccessibilityEscape={() => setOpen(false)}>
               {trigger(true)}
               <View style={styles.dropdown}>
                 {(offline || error) && (
@@ -70,15 +93,15 @@ export function LearnerSwitcher() {
                   accessibilityLabel="Learners"
                   data={learners}
                   keyExtractor={(learner) => learner.id}
-                  extraData={selectedLearner?.id}
+                  extraData={currentLearner?.id}
                   style={{ maxHeight: height * 0.45, flexGrow: 0, flexShrink: 1 }}
                   contentContainerStyle={styles.list}
                   keyboardShouldPersistTaps="handled"
                   renderItem={({ item }) => {
-                    const selected = item.id === selectedLearner?.id;
+                    const selected = item.id === currentLearner?.id;
                     return (
                       <Pressable accessibilityRole="radio" accessibilityLabel={item.name} aria-checked={selected}
-                        onPress={() => { selectLearner(item.id); setOpen(false); }}
+                        onPress={() => { selectLearner(item.id); setOpen(false); onSelect?.(item.id); }}
                         style={({ pressed }) => [styles.row, selected && styles.selectedRow, pressed && styles.pressed]}>
                         <LearnerAvatar learnerId={item.id} size={44} />
                         <Text style={styles.optionName}>{item.name}</Text>
@@ -87,13 +110,13 @@ export function LearnerSwitcher() {
                     );
                   }}
                 />}
-                <View style={[styles.footer, !learners.length && !offline && !error && styles.emptyFooter]}>
+                {allowAdd && <View style={[styles.footer, !learners.length && !offline && !error && styles.emptyFooter]}>
                   <Pressable accessibilityRole="button" onPress={() => { setOpen(false); router.push('/learners/new'); }}
                     style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
                     <View style={styles.addIcon}><AppIcon name="plus" size={23} color={colors.accentInk} /></View>
                     <Text style={styles.addLabel}>{learners.length ? 'Add another learner' : 'Add learner'}</Text>
                   </Pressable>
-                </View>
+                </View>}
               </View>
             </View>
           </View>
@@ -105,9 +128,12 @@ export function LearnerSwitcher() {
 
 const styles = StyleSheet.create({
   trigger: { minHeight: 80, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 24, backgroundColor: colors.background },
+  compactTrigger: { minHeight: 32, gap: 10, padding: 0, borderRadius: 8 },
   triggerActive: { backgroundColor: colors.surface },
   placeholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  compactPlaceholder: { width: 32, height: 32, borderRadius: 8 },
   name: { flex: 1, fontFamily: fonts.medium, fontSize: 25, lineHeight: 31, color: colors.ink },
+  compactName: { fontFamily: fonts.regular, fontSize: 17, lineHeight: 22, color: colors.muted },
   chevronOpen: { transform: [{ rotate: '180deg' }] },
   overlay: { flex: 1, backgroundColor: 'rgba(24, 42, 54, 0.12)' },
   safeArea: { flex: 1 },

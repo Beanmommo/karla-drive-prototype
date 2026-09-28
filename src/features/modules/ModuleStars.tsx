@@ -4,12 +4,12 @@ import { AppIcon } from '../../components/AppIcon';
 import { colors, fonts } from '../../theme';
 import { getModuleRating, moduleStatusLabels, ratingDescriptions, ratingStatuses, type ModuleStatus } from './model';
 
-export function ModuleStars({ status, size = 19 }: { status: ModuleStatus; size?: number }) {
+export function ModuleStars({ status, size = 19, showCount = true }: { status: ModuleStatus; size?: number; showCount?: boolean }) {
   const rating = getModuleRating(status);
   return <View accessible accessibilityLabel={`${rating} of 3 stars`} style={styles.stars}>
     {[1, 2, 3].map(star => <AppIcon key={star} name="star" size={size}
       color={star <= rating ? colors.star : colors.muted} fill={star <= rating ? colors.starFill : 'none'} />)}
-    <Text style={styles.count}>{rating}/3</Text>
+    {showCount && <Text style={styles.count}>{rating}/3</Text>}
   </View>;
 }
 

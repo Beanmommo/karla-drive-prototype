@@ -49,10 +49,10 @@ export function usePracticeTotals(learner: Learner) {
 }
 export function PracticeSummary({ learner }: { learner: Learner }) {
   const totals = usePracticeTotals(learner);
-  return <Pressable accessibilityRole="button" accessibilityLabel={totals.count + ' practice sessions. Open practice history.'}
+  return <Pressable accessibilityRole="button" accessibilityLabel="Practice sessions. Open practice sessions."
     onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id } })} style={styles.card}>
     <View style={styles.icon}><AppIcon name="route" size={26} color={colors.accentInk} /></View>
-    <View style={styles.copy}><Text style={styles.title}>Practice sessions</Text><Text style={styles.body}>{totals.count} practice {totals.count === 1 ? 'session' : 'sessions'}</Text>
+    <View style={styles.copy}><Text style={styles.title}>Practice sessions</Text>
       {totals.cached && <Text style={styles.small}>Saved on this device · refresh pending</Text>}</View>
     <AppIcon name="chevronRight" size={22} color={colors.muted} />
   </Pressable>;
@@ -61,5 +61,5 @@ const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 20, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   icon: { height: 48, width: 48, borderRadius: 16, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1, gap: 5 }, title: { fontFamily: fonts.medium, fontSize: 21, color: colors.ink },
-  body: { fontFamily: fonts.regular, fontSize: 16, color: colors.muted }, small: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted },
+  small: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted },
 });

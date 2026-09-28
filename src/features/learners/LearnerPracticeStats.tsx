@@ -1,6 +1,6 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { AppState, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppIcon } from '../../components/AppIcon';
@@ -16,26 +16,25 @@ import { usePracticeTotals } from '../practice/PracticeSummary';
 const ARC = 'M 10 90 A 80 80 0 0 1 170 90';
 const ARC_LENGTH = Math.PI * 80;
 
-function HoursStat({ label, minutes, target, night = false }: {
+function HoursStat({ label, minutes, target, night = false, onPress }: {
   label: string;
   minutes: number;
   target?: number;
   night?: boolean;
+  onPress: () => void;
 }) {
   const hours = formatPracticeHours(minutes);
   const progress = target ? Math.min(minutes / (target * 60), 1) : 0;
   const description = target ? `${hours} of ${target} hours required` : `${hours} hours`;
 
   return (
-    <View
+    <Pressable
       accessible
-      accessibilityRole={target ? 'progressbar' : 'text'}
+      accessibilityRole="button"
       accessibilityLabel={`${label}, ${description}`}
-      aria-valuemin={target ? 0 : undefined}
-      aria-valuemax={target}
-      aria-valuenow={target ? Math.min(minutes / 60, target) : undefined}
-      aria-valuetext={target ? description : undefined}
-      style={styles.stat}
+      accessibilityHint={night ? 'Opens practice sessions with recorded night hours' : 'Opens all practice sessions'}
+      onPress={onPress}
+      style={({ pressed }) => [styles.stat, pressed && styles.pressed]}
     >
       <View aria-hidden style={styles.statContents}>
         <View style={[styles.icon, night && styles.nightIcon]}>
@@ -65,7 +64,7 @@ function HoursStat({ label, minutes, target, night = false }: {
         )}
         <Text style={styles.unit}>{target ? `of ${target} hours` : 'hours'}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -97,8 +96,10 @@ export function LearnerPracticeStats({ learner }: { learner: Learner }) {
   return (
     <View style={styles.section}>
       <View style={[styles.stats, (width < 360 || fontScale > 1.3) && styles.stacked]}>
-        <HoursStat label="Total hours" minutes={stats.totalMinutes} target={targets?.total} />
-        <HoursStat label="Night hours" minutes={stats.nightMinutes} target={targets?.night} night />
+        <HoursStat label="Total hours" minutes={stats.totalMinutes} target={targets?.total}
+          onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id, filter: 'all' } })} />
+        <HoursStat label="Night hours" minutes={stats.nightMinutes} target={targets?.night} night
+          onPress={() => router.push({ pathname: '/learners/[learnerId]/practice', params: { learnerId: learner.id, filter: 'night' } })} />
       </View>
       {targets && (
         <Link href={PRACTICE_REQUIREMENTS_URL} target="_blank" style={styles.requirements}>
@@ -114,6 +115,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', gap: 12 },
   stacked: { flexDirection: 'column' },
   stat: { flex: 1, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 20 },
+  pressed: { opacity: 0.7 },
   statContents: { alignItems: 'center', gap: 8 },
   icon: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.accentSoft },
   nightIcon: { backgroundColor: '#EEE8F8' },

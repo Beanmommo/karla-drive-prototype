@@ -4,9 +4,8 @@ import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View, type
 import { AppIcon } from '../../components/AppIcon';
 import { colors, fonts } from '../../theme';
 import { getModuleSummary, moduleStages, type LearnerModule, type ModuleStageId } from './model';
+import { stageAppearance } from './stageAppearance';
 
-const stageColors = ['#E4F4FE', '#E5F5EB', '#F0E9FC', '#FFF0DC'];
-const stageIcons = ['car', 'route', 'location', 'shield'] as const;
 const minimumCardInset = 48;
 const maximumCardWidth = 384;
 const cardGap = 12;
@@ -57,9 +56,9 @@ export function StageCarousel({ modules, loaded, onSelect }: {
           <Pressable accessibilityRole="button" accessibilityLabel={`Stage ${stage.id}, ${stage.title}, ${loaded ? summary.stars : 'unavailable'} of ${summary.maxStars} stars`}
             accessibilityHint={page === index ? 'Open the modules in this stage' : 'Centre this stage in the carousel'}
             onPress={() => page === index ? onSelect(stage.id) : selectPage(index)}
-            style={({ pressed }) => [styles.card, { backgroundColor: stageColors[index] }, pressed && styles.pressed]}>
+            style={({ pressed }) => [styles.card, { backgroundColor: stageAppearance[stage.id].color }, pressed && styles.pressed]}>
             <View aria-hidden style={styles.cardContents}>
-              <View style={styles.icon}><AppIcon name={stageIcons[index]} size={52} color={colors.ink} strokeWidth={1.6} /></View>
+              <View style={styles.icon}><AppIcon name={stageAppearance[stage.id].icon} size={52} color={colors.ink} strokeWidth={1.6} /></View>
               <View style={styles.heading}>
                 <Text style={styles.stageLabel}>STAGE {stage.id}</Text>
                 <Text style={styles.title}>{stage.title}</Text>

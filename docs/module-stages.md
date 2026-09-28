@@ -11,7 +11,7 @@ The catalogue follows the agreed parent-supervisor grouping:
 | 3 — Complex drives | Changing lanes; Gaps & merging; Different roads & conditions | 9 |
 | 4 — Rehearsing solo | Everyday drives with less prompting; Managing attention & driving decisions | 6 |
 
-Each module has one current supervisor rating. Stages 3 and 4 remind parents to revisit earlier skills in harder situations and with less prompting. These are not separate assessments of the same module in every stage.
+The stage module page uses the stage name and matching carousel icon as its header and shows a compact learner selector, a small star count/total badge, and the module list. The selector keeps the 32-point avatar and 17-point name text, offers only existing learners, and updates the current stage's ratings when a learner is chosen. Home retains its larger selector and Add learner action. Each module has one current supervisor rating. Earlier skills can be revisited in harder situations and with less prompting, without separate assessments of the same module in every stage.
 
 ## Ratings and totals
 

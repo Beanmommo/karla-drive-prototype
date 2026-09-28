@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import type { ModuleAssessment } from '../modules/model';
+import type { PracticeHistoryFilter } from './history';
 import type { PracticeEvent, PracticeSession, TrackPoint } from './model';
 import { applyRemoteDiscards, cacheRemoteDetails, cacheRemoteSession, confirmDiscard, getSession, listSessions, markSynced,
   pendingDiscards, readEvents, readPoints, setSyncError } from './store';
@@ -63,11 +64,14 @@ async function fetchDiscards(accountId: string) {
     if (result.data.length < 1000) break;
   }
 }
-export async function fetchPracticeHistory(accountId: string, learnerId: string, offset = 0): Promise<boolean> {
+export async function fetchPracticeHistory(accountId: string, learnerId: string, offset = 0, filter: PracticeHistoryFilter = 'all'): Promise<boolean> {
   if (!supabase) return false;
   await fetchDiscards(accountId);
-  const { data, error } = await supabase.from('practice_sessions').select('record,revision')
-    .eq('account_id', accountId).eq('learner_id', learnerId).eq('status', 'finished')
+  let query = supabase.from('practice_sessions').select('record,revision')
+    .eq('account_id', accountId).eq('learner_id', learnerId).eq('status', 'finished');
+  // Filter before pagination so older night sessions are not hidden by recent daytime drives.
+  if (filter === 'night') query = query.gt('record->metrics->nightSeconds', 0);
+  const { data, error } = await query
     .order('ended_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + 29);
   if (error) throw new Error('Could not refresh history. Saved sessions are still available.');
   for (const row of data) {

@@ -27,7 +27,7 @@ export default function CreateLearnerScreen() {
   const { addLearner } = useLearners();
   const [step, setStep] = useState<Step>(1);
   const [draft, setDraft] = useState<LearnerDraft>({
-    name: '', dateOfBirth: '', country: '', state: '', acknowledgements: emptyAcknowledgements(), termsAccepted: false,
+    name: '', dateOfBirth: '', country: 'AU', state: '', acknowledgements: emptyAcknowledgements(), termsAccepted: false,
   });
   const [termsOpen, setTermsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -118,11 +118,8 @@ export default function CreateLearnerScreen() {
 
           {step === 1 ? (
             <View style={styles.fields}>
-              <SelectField label="Country" placeholder="Select country" value={draft.country}
-                options={[{ label: 'Australia', value: 'AU' }]}
-                onChange={(country) => updateDraft({ country, state: country === draft.country ? draft.state : '' })} />
-              {!!draft.country && <SelectField label="State" placeholder="Select state" value={draft.state}
-                options={[{ label: 'Victoria', value: 'VIC' }]} onChange={(state) => updateDraft({ state })} />}
+              <SelectField label="State" placeholder="Select state" value={draft.state}
+                options={[{ label: 'Victoria', value: 'VIC' }]} onChange={(state) => updateDraft({ state })} />
             </View>
           ) : step === 2 ? (
             <View style={styles.fields}>
